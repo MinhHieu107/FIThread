@@ -30,7 +30,7 @@ Trạng thái: ⬜ chưa bắt đầu · 🟡 đang làm · ✅ xong
 
 | Phase | Nội dung | Ngày (2026) | Cột mốc | Trạng thái |
 |---|---|---|---|---|
-| 0 | Khởi tạo & nền tảng | D1 · 01/10 | App chạy, kết nối MySQL, có khung giao diện | ⬜ |
+| 0 | Khởi tạo & nền tảng | D1 · 01/10 | App chạy, kết nối MySQL, có khung giao diện | Xong |
 | 1 | Đăng ký, xác thực email, đăng nhập | D2–4 · 02–04/10 | Đăng ký → OTP → đăng nhập chạy được | ⬜ |
 | 2 | Danh mục môn học & giảng viên | D5–6 · 05–06/10 | Xem/tìm môn học, có dữ liệu mẫu | ⬜ |
 | 3 | Đánh giá môn học theo rubric | D7–9 · 07–09/10 | Gửi và xem đánh giá ẩn danh | ⬜ |
