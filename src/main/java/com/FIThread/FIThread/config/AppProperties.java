@@ -12,7 +12,12 @@ public class AppProperties {
     private List<String> allowedEmailDomains;
     private int otpExpiryMinutes = 15;
     private int otpMaxAttempts = 5;
-
+    private String jwtSecret;
+    private int jwtExpirationHours = 24;
+    public String getJwtSecret() { return jwtSecret; }
+    public void setJwtSecret(String jwtSecret) { this.jwtSecret = jwtSecret; }
+    public int getJwtExpirationHours() { return jwtExpirationHours; }
+    public void setJwtExpirationHours(int jwtExpirationHours) { this.jwtExpirationHours = jwtExpirationHours; }
     public List<String> getAllowedEmailDomains() { return allowedEmailDomains; }
     public void setAllowedEmailDomains(List<String> allowedEmailDomains) { this.allowedEmailDomains = allowedEmailDomains; }
     public int getOtpExpiryMinutes() { return otpExpiryMinutes; }
