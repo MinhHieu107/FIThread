@@ -7,7 +7,6 @@ import com.FIThread.FIThread.user.UserRepository;
 import com.FIThread.FIThread.user.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,6 +24,7 @@ public class AuthController {
     private final EmailVerificationService emailVerificationService;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
 
     @PostMapping("/register")
     public Map<String, String> register(@Valid @RequestBody RegisterRequest request) {
@@ -48,7 +48,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public Map<String, String> login(@Valid @RequestBody LoginRequest request) {
+    public TokenPairResponse login(@Valid @RequestBody LoginRequest request) {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
@@ -59,8 +59,21 @@ public class AuthController {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BusinessException("Khong tim thay nguoi dung"));
 
-        String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
-        return Map.of("token", token, "fullName", user.getFullName(), "role", user.getRole().name());
+        String accessToken = jwtService.generateToken(user.getEmail(), user.getRole().name());
+        String refreshToken = refreshTokenService.issue(user);
+
+        return new TokenPairResponse(accessToken, refreshToken, user.getFullName(), user.getRole().name());
+    }
+
+    @PostMapping("/refresh")
+    public TokenPairResponse refresh(@Valid @RequestBody RefreshRequest request) {
+        return refreshTokenService.rotate(request.getRefreshToken());
+    }
+
+    @PostMapping("/logout")
+    public Map<String, String> logout(@Valid @RequestBody RefreshRequest request) {
+        refreshTokenService.revoke(request.getRefreshToken());
+        return Map.of("message", "Da dang xuat");
     }
 
     @GetMapping("/me")
