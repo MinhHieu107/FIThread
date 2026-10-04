@@ -14,6 +14,10 @@ public class AppProperties {
     private int otpMaxAttempts = 5;
     private String jwtSecret;
     private int jwtExpirationHours = 24;
+    private int refreshExpirationDays = 30;
+
+    public int getRefreshExpirationDays() { return refreshExpirationDays; }
+    public void setRefreshExpirationDays(int refreshExpirationDays) { this.refreshExpirationDays = refreshExpirationDays; }
     public String getJwtSecret() { return jwtSecret; }
     public void setJwtSecret(String jwtSecret) { this.jwtSecret = jwtSecret; }
     public int getJwtExpirationHours() { return jwtExpirationHours; }
