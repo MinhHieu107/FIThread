@@ -52,6 +52,45 @@ public class OfferingService {
                 .map(o -> toResponse(o, o.getCourse(), o.getLecturer()))
                 .toList();
     }
+    @Transactional
+    public OfferingResponse update(Long id, CreateOfferingRequest request) {
+        CourseOffering offering = offeringRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Khong tim thay lan mo lop", HttpStatus.NOT_FOUND));
+
+        Course course = courseRepository.findById(request.getCourseId())
+                .orElseThrow(() -> new BusinessException("Khong tim thay mon hoc", HttpStatus.NOT_FOUND));
+
+        Lecturer lecturer = lecturerRepository.findByFullName(request.getLecturerName().trim())
+                .orElseGet(() -> {
+                    Lecturer l = new Lecturer();
+                    l.setFullName(request.getLecturerName().trim());
+                    return lecturerRepository.save(l);
+                });
+
+        offering.setCourse(course);
+        offering.setLecturer(lecturer);
+        offering.setSemester(request.getSemester().trim());
+        offeringRepository.save(offering);
+
+        return toResponse(offering, course, lecturer);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        if (!offeringRepository.existsById(id)) {
+            throw new BusinessException("Khong tim thay lan mo lop", HttpStatus.NOT_FOUND);
+        }
+        // TODO Phase 3: chan xoa neu offering da co review gan vao
+        offeringRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OfferingResponse> findAll() {
+        return offeringRepository.findAll().stream()
+                .map(o -> toResponse(o, o.getCourse(), o.getLecturer()))
+                .toList();
+    }
+
 
     private OfferingResponse toResponse(CourseOffering o, Course course, Lecturer lecturer) {
         return new OfferingResponse(

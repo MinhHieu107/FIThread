@@ -5,18 +5,41 @@ import AdminGuard from "@/components/AdminGuard";
 import { apiFetch, ApiError } from "@/lib/api";
 import { Course, PageResponse, OfferingResponse } from "@/types/course";
 
-function OfferingForm() {
+function OfferingManager() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [offerings, setOfferings] = useState<OfferingResponse[]>([]);
   const [courseId, setCourseId] = useState<number | "">("");
   const [lecturerName, setLecturerName] = useState("");
   const [semester, setSemester] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
+  function loadOfferings() {
+    apiFetch<OfferingResponse[]>("/admin/offerings").then(setOfferings);
+  }
+
   useEffect(() => {
     apiFetch<PageResponse<Course>>("/courses?size=200").then((res) => setCourses(res.content));
+    loadOfferings();
   }, []);
+
+  function resetForm() {
+    setCourseId("");
+    setLecturerName("");
+    setSemester("");
+    setEditingId(null);
+  }
+
+  function startEdit(o: OfferingResponse) {
+    setEditingId(o.id);
+    setCourseId(o.courseId);
+    setLecturerName(o.lecturerName);
+    setSemester(o.semester);
+    setSuccess("");
+    setError("");
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,13 +50,18 @@ function OfferingForm() {
     setSuccess("");
 
     try {
-      await apiFetch<OfferingResponse>("/admin/offerings", {
-        method: "POST",
-        body: JSON.stringify({ courseId, lecturerName, semester }),
-      });
-      setSuccess("Đã tạo lần mở lớp thành công.");
-      setLecturerName("");
-      setSemester("");
+      const body = JSON.stringify({ courseId, lecturerName, semester });
+
+      if (editingId) {
+        await apiFetch<OfferingResponse>(`/admin/offerings/${editingId}`, { method: "PUT", body });
+        setSuccess("Đã cập nhật.");
+      } else {
+        await apiFetch<OfferingResponse>("/admin/offerings", { method: "POST", body });
+        setSuccess("Đã tạo lần mở lớp thành công.");
+      }
+
+      resetForm();
+      loadOfferings();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra");
     } finally {
@@ -41,11 +69,25 @@ function OfferingForm() {
     }
   }
 
-  return (
-    <main className="max-w-xl mx-auto px-4 py-12">
-      <h1 className="text-2xl font-bold mb-6">Thêm lần mở lớp (giảng viên + học kỳ)</h1>
+  async function handleDelete(id: number) {
+    if (!confirm("Xóa lần mở lớp này?")) return;
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+    setError("");
+    try {
+      await apiFetch(`/admin/offerings/${id}`, { method: "DELETE" });
+      loadOfferings();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra");
+    }
+  }
+
+  return (
+    <main className="max-w-3xl mx-auto px-4 py-12">
+      <h1 className="text-2xl font-bold mb-6">
+        {editingId ? "Sửa lần mở lớp" : "Thêm lần mở lớp"}
+      </h1>
+
+      <form onSubmit={handleSubmit} className="space-y-4 mb-10">
         <select
           required
           className="w-full border border-gray-300 rounded-md px-3 py-2"
@@ -83,14 +125,60 @@ function OfferingForm() {
         {error && <p className="text-red-600 text-sm">{error}</p>}
         {success && <p className="text-green-600 text-sm">{success}</p>}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-brand hover:bg-brand-dark text-white rounded-md px-4 py-2 font-medium disabled:opacity-50"
-        >
-          {loading ? "Đang lưu..." : "Thêm"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-brand hover:bg-brand-dark text-white rounded-md px-4 py-2 font-medium disabled:opacity-50"
+          >
+            {loading ? "Đang lưu..." : editingId ? "Cập nhật" : "Thêm"}
+          </button>
+          {editingId && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="border border-gray-300 rounded-md px-4 py-2 font-medium"
+            >
+              Hủy sửa
+            </button>
+          )}
+        </div>
       </form>
+
+      <h2 className="font-semibold mb-3">Danh sách lần mở lớp</h2>
+      {offerings.length === 0 ? (
+        <p className="text-gray-500 text-sm">Chưa có lần mở lớp nào.</p>
+      ) : (
+        <div className="space-y-2">
+          {offerings.map((o) => (
+            <div
+              key={o.id}
+              className="flex items-center justify-between border border-gray-200 rounded-md p-3 bg-white"
+            >
+              <div>
+                <span className="text-sm text-gray-500">{o.courseCode}</span>
+                <p className="font-medium">
+                  {o.courseName} — {o.lecturerName} — {o.semester}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => startEdit(o)}
+                  className="text-sm text-brand-dark hover:underline"
+                >
+                  Sửa
+                </button>
+                <button
+                  onClick={() => handleDelete(o.id)}
+                  className="text-sm text-red-600 hover:underline"
+                >
+                  Xóa
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 }
@@ -98,7 +186,7 @@ function OfferingForm() {
 export default function AdminOfferingsPage() {
   return (
     <AdminGuard>
-      <OfferingForm />
+      <OfferingManager />
     </AdminGuard>
   );
 }
