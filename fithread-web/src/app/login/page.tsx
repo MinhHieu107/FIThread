@@ -38,7 +38,7 @@ export default function LoginPage() {
           type="email"
           placeholder="Email"
           required
-          className="w-full border border-gray-300 rounded-md px-3 py-2"
+          className="input-field"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
         />
@@ -46,7 +46,7 @@ export default function LoginPage() {
           type="password"
           placeholder="Mật khẩu"
           required
-          className="w-full border border-gray-300 rounded-md px-3 py-2"
+          className="input-field"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
         />
@@ -54,7 +54,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-brand hover:bg-brand-dark text-white rounded-md py-2 font-medium disabled:opacity-50"
+          className="btn-primary w-full"
         >
           {loading ? "Đang xử lý..." : "Đăng nhập"}
         </button>

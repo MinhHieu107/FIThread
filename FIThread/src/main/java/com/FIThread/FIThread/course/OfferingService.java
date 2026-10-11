@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-
+import com.FIThread.FIThread.review.ReviewRepository;
 @Service
 @RequiredArgsConstructor
 public class OfferingService {
@@ -17,6 +17,7 @@ public class OfferingService {
     private final CourseRepository courseRepository;
     private final LecturerRepository lecturerRepository;
     private final CourseOfferingRepository offeringRepository;
+    private final ReviewRepository reviewRepository;
 
     @Transactional
     public OfferingResponse create(CreateOfferingRequest request) {
@@ -59,7 +60,14 @@ public class OfferingService {
 
         Course course = courseRepository.findById(request.getCourseId())
                 .orElseThrow(() -> new BusinessException("Khong tim thay mon hoc", HttpStatus.NOT_FOUND));
-
+        if (reviewRepository.existsByOfferingId(id)) {
+            boolean changedCourse = !offering.getCourse().getId().equals(request.getCourseId());
+            boolean changedSemester = !offering.getSemester().equals(request.getSemester().trim());
+            if (changedCourse || changedSemester) {
+                throw new BusinessException(
+                        "Lan mo lop nay da co danh gia, chi duoc sua ten giang vien", HttpStatus.CONFLICT);
+            }
+        }
         Lecturer lecturer = lecturerRepository.findByFullName(request.getLecturerName().trim())
                 .orElseGet(() -> {
                     Lecturer l = new Lecturer();
@@ -80,7 +88,9 @@ public class OfferingService {
         if (!offeringRepository.existsById(id)) {
             throw new BusinessException("Khong tim thay lan mo lop", HttpStatus.NOT_FOUND);
         }
-        // TODO Phase 3: chan xoa neu offering da co review gan vao
+        if (reviewRepository.existsByOfferingId(id)) {
+            throw new BusinessException("Khong the xoa: lan mo lop nay da co danh gia", HttpStatus.CONFLICT);
+        }
         offeringRepository.deleteById(id);
     }
 

@@ -53,7 +53,7 @@ function ImportForm() {
   return (
     <main className="max-w-xl mx-auto px-4 py-12">
       <h1 className="text-2xl font-bold mb-2">Nhập danh sách môn học</h1>
-      <p className="text-gray-500 text-sm mb-6">
+      <p className="text-ink-muted text-sm mb-6">
         File CSV có header: course_code,course_name,credits,specialization,is_required
       </p>
 

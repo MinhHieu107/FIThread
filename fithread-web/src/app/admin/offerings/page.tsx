@@ -90,7 +90,7 @@ function OfferingManager() {
       <form onSubmit={handleSubmit} className="space-y-4 mb-10">
         <select
           required
-          className="w-full border border-gray-300 rounded-md px-3 py-2"
+          className="input-field"
           value={courseId}
           onChange={(e) => setCourseId(Number(e.target.value))}
         >
@@ -106,14 +106,14 @@ function OfferingManager() {
           type="text"
           placeholder="Tên giảng viên"
           required
-          className="w-full border border-gray-300 rounded-md px-3 py-2"
+          className="input-field"
           value={lecturerName}
           onChange={(e) => setLecturerName(e.target.value)}
         />
 
         <select
           required
-          className="w-full border border-gray-300 rounded-md px-3 py-2"
+          className="input-field"
           value={semester}
           onChange={(e) => setSemester(e.target.value)}
         >
@@ -147,7 +147,7 @@ function OfferingManager() {
 
       <h2 className="font-semibold mb-3">Danh sách lần mở lớp</h2>
       {offerings.length === 0 ? (
-        <p className="text-gray-500 text-sm">Chưa có lần mở lớp nào.</p>
+        <p className="text-ink-muted text-sm">Chưa có lần mở lớp nào.</p>
       ) : (
         <div className="space-y-2">
           {offerings.map((o) => (
@@ -156,7 +156,7 @@ function OfferingManager() {
               className="flex items-center justify-between border border-gray-200 rounded-md p-3 bg-white"
             >
               <div>
-                <span className="text-sm text-gray-500">{o.courseCode}</span>
+                <span className="text-sm text-ink-muted">{o.courseCode}</span>
                 <p className="font-medium">
                   {o.courseName} — {o.lecturerName} — {o.semester}
                 </p>
