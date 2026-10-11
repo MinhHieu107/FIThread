@@ -30,11 +30,33 @@ function ModerationManager() {
     load();
   }, [load]);
 
-  async function act(id: number, action: "hide" | "restore") {
-    if (action === "hide" && !confirm("Ẩn hẳn đánh giá này?")) return;
+  async function hide(id: number) {
+    const reason = window.prompt("Lý do ẩn đánh giá (bắt buộc, ít nhất 5 ký tự):");
+    if (reason === null) return;
+    if (reason.trim().length < 5) {
+      setError("Vui lòng nhập lý do ẩn (ít nhất 5 ký tự).");
+      return;
+    }
+
     setError("");
     try {
-      await apiFetch(`/admin/moderation/reviews/${id}/${action}`, { method: "POST" });
+      await apiFetch(`/admin/moderation/reviews/${id}/hide`, {
+        method: "POST",
+        body: JSON.stringify({ reason: reason.trim() }),
+      });
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra");
+    }
+  }
+
+  async function restore(id: number) {
+    setError("");
+    try {
+      await apiFetch(`/admin/moderation/reviews/${id}/restore`, {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
       load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra");
@@ -73,10 +95,18 @@ function ModerationManager() {
                   {r.courseName} — {r.lecturerName} — {r.semester}
                 </p>
               </div>
-              <span className="badge">{r.reportCount} báo cáo</span>
+              <div className="flex items-center gap-2">
+                {r.aiFlagged && (
+                  <span className="inline-block text-xs bg-brand-dark text-white rounded px-2 py-0.5">
+                    AI gắn cờ
+                  </span>
+                )}
+                <span className="badge">{r.reportCount} báo cáo</span>
+              </div>
             </div>
 
             <p className="whitespace-pre-wrap text-sm">{r.comment}</p>
+            {r.aiSummary && <p className="text-xs text-ink-muted">Tóm tắt AI: {r.aiSummary}</p>}
 
             {r.reasons.length > 0 && (
               <div className="rounded-md bg-brand-lighter px-3 py-2 text-sm">
@@ -89,14 +119,27 @@ function ModerationManager() {
               </div>
             )}
 
+            {r.history.length > 0 && (
+              <div className="rounded-md bg-brand-lighter px-3 py-2 text-sm space-y-1">
+                <p className="font-medium">Lịch sử xử lý:</p>
+                {r.history.map((h, i) => (
+                  <p key={i} className="text-ink-muted">
+                    {new Date(h.createdAt).toLocaleString("vi-VN")} · {h.adminName} ·{" "}
+                    {h.action === "HIDE" ? "Ẩn" : "Hiển thị lại"}
+                    {h.reason ? `: ${h.reason}` : ""}
+                  </p>
+                ))}
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <span className="text-xs text-ink-muted">{new Date(r.createdAt).toLocaleString("vi-VN")}</span>
               <div className="flex gap-2">
-                <button onClick={() => act(r.id, "restore")} className="btn-secondary">
+                <button onClick={() => restore(r.id)} className="btn-secondary">
                   {tab === "REPORTED" ? "Bỏ qua báo cáo" : "Hiển thị lại"}
                 </button>
                 {tab !== "HIDDEN" && (
-                  <button onClick={() => act(r.id, "hide")} className="btn-primary">
+                  <button onClick={() => hide(r.id)} className="btn-primary">
                     Ẩn hẳn
                   </button>
                 )}

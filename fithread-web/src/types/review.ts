@@ -56,4 +56,14 @@ export interface ModerationReview {
   createdAt: string;
   reportCount: number;
   reasons: string[];
+  aiFlagged: boolean;
+  aiSummary: string | null;
+  history: ModerationHistoryEntry[];
+}
+
+export interface ModerationHistoryEntry {
+  action: string;
+  reason: string | null;
+  adminName: string;
+  createdAt: string;
 }

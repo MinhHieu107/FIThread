@@ -156,10 +156,11 @@ function CourseDetail() {
           <section>
             <h2 className="font-semibold mb-3">Đánh giá từ sinh viên</h2>
             <ReviewList
-              courseId={courseId}
-              refreshKey={refreshKey}
-              onEdit={handleEdit}
-              onChanged={handleChanged}
+                courseId={courseId}
+                refreshKey={refreshKey}
+                isAdmin={user?.role === "ADMIN"}
+                 onEdit={handleEdit}
+                onChanged={handleChanged}
             />
           </section>
         </>

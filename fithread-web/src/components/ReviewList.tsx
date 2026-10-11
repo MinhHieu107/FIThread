@@ -8,16 +8,21 @@ import { StarDisplay } from "./StarRating";
 interface Props {
   courseId: number;
   refreshKey: number;
+  isAdmin: boolean;
   onEdit: (offeringId: number) => void;
   onChanged: () => void;
 }
 
-export default function ReviewList({ courseId, refreshKey, onEdit, onChanged }: Props) {
+export default function ReviewList({ courseId, refreshKey, isAdmin, onEdit, onChanged }: Props) {
   const [page, setPage] = useState(0);
   const [data, setData] = useState<ReviewPage | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+
+  const [hidingId, setHidingId] = useState<number | null>(null);
+  const [hideReason, setHideReason] = useState("");
+  const [hideLoading, setHideLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +63,7 @@ export default function ReviewList({ courseId, refreshKey, onEdit, onChanged }: 
 
   async function handleReport(reviewId: number) {
     const reason = window.prompt("Lý do báo cáo (không bắt buộc):");
-    if (reason === null) return; // bấm Hủy
+    if (reason === null) return;
     setNotice(null);
     try {
       await apiFetch(`/reviews/${reviewId}/report`, {
@@ -66,9 +71,39 @@ export default function ReviewList({ courseId, refreshKey, onEdit, onChanged }: 
         body: JSON.stringify({ reason }),
       });
       setNotice({ type: "ok", text: "Đã gửi báo cáo. Cảm ơn bạn!" });
-      onChanged(); // làm mới danh sách phòng khi đánh giá vừa bị tự động ẩn
+      onChanged();
     } catch (err) {
       setNotice({ type: "error", text: err instanceof ApiError ? err.message : "Có lỗi xảy ra" });
+    }
+  }
+
+  function startHide(reviewId: number) {
+    setHidingId(reviewId);
+    setHideReason("");
+    setNotice(null);
+  }
+
+  async function confirmHide(reviewId: number) {
+    if (hideReason.trim().length < 5) {
+      setNotice({ type: "error", text: "Vui lòng nhập lý do ẩn (ít nhất 5 ký tự)." });
+      return;
+    }
+
+    setHideLoading(true);
+    setNotice(null);
+    try {
+      await apiFetch(`/admin/moderation/reviews/${reviewId}/hide`, {
+        method: "POST",
+        body: JSON.stringify({ reason: hideReason.trim() }),
+      });
+      setNotice({ type: "ok", text: "Đã ẩn đánh giá. Có thể khôi phục tại trang Kiểm duyệt." });
+      setHidingId(null);
+      setHideReason("");
+      onChanged();
+    } catch (err) {
+      setNotice({ type: "error", text: err instanceof ApiError ? err.message : "Có lỗi xảy ra" });
+    } finally {
+      setHideLoading(false);
     }
   }
 
@@ -122,6 +157,10 @@ export default function ReviewList({ courseId, refreshKey, onEdit, onChanged }: 
                     Xóa
                   </button>
                 </>
+              ) : isAdmin ? (
+                <button onClick={() => startHide(r.id)} className="text-red-600 hover:underline">
+                  Ẩn
+                </button>
               ) : (
                 <button onClick={() => handleReport(r.id)} className="hover:text-red-600 hover:underline">
                   Báo cáo
@@ -129,6 +168,28 @@ export default function ReviewList({ courseId, refreshKey, onEdit, onChanged }: 
               )}
             </div>
           </div>
+
+          {isAdmin && hidingId === r.id && (
+            <div className="rounded-md bg-brand-lighter p-3 space-y-2">
+              <p className="text-sm font-medium">Lý do ẩn đánh giá (bắt buộc, được lưu lại để đối chiếu)</p>
+              <textarea
+                className="input-field"
+                rows={3}
+                maxLength={500}
+                placeholder="Ví dụ: chứa thông tin cá nhân, lời lẽ đe dọa, nội dung spam..."
+                value={hideReason}
+                onChange={(e) => setHideReason(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <button onClick={() => confirmHide(r.id)} disabled={hideLoading} className="btn-primary">
+                  {hideLoading ? "Đang ẩn..." : "Xác nhận ẩn"}
+                </button>
+                <button onClick={() => setHidingId(null)} disabled={hideLoading} className="btn-secondary">
+                  Hủy
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ))}
 

@@ -16,6 +16,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     long countByOfferingCourseIdAndStatus(Long courseId, ReviewStatus status);
 
+    long countByStatus(ReviewStatus status);
+
+
     Page<Review> findByOfferingCourseIdAndStatusOrderByCreatedAtDesc(
             Long courseId, ReviewStatus status, Pageable pageable);
 

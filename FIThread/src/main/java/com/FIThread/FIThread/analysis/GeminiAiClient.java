@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Component
@@ -37,19 +38,99 @@ public class GeminiAiClient implements AiClient {
                 .build();
     }
 
+    // ---------- phan tich 1 danh gia ----------
+
     @Override
     public ReviewAnalysisResult analyzeReview(String comment) {
-        // Vo hieu hoa the "<...>" trong nhan xet de nguoi dung khong thoat khoi the <nhan_xet>
-        String safeComment = comment.replace("<", "‹").replace(">", "›");
+        String json = generateJson(
+                PromptTemplates.SYSTEM_PROMPT,
+                "<nhan_xet>\n" + neutralize(comment) + "\n</nhan_xet>",
+                PromptTemplates.responseSchema());
+        return sanitize(readJson(json, ModelOutput.class));
+    }
 
+    private ReviewAnalysisResult sanitize(ModelOutput out) {
+        double score = out.score() == null ? 0 : Math.max(-1.0, Math.min(1.0, out.score()));
+
+        Sentiment sentiment;
+        try {
+            sentiment = Sentiment.valueOf(out.sentiment().trim().toUpperCase(Locale.ROOT));
+        } catch (Exception e) {
+            sentiment = score > 0.25 ? Sentiment.POSITIVE : score < -0.25 ? Sentiment.NEGATIVE : Sentiment.NEUTRAL;
+        }
+
+        List<String> themes = (out.themes() == null ? List.<String>of() : out.themes()).stream()
+                .filter(Objects::nonNull)
+                .map(t -> t.trim().toUpperCase(Locale.ROOT))
+                .filter(PromptTemplates.THEMES::contains)
+                .distinct()
+                .limit(3)
+                .toList();
+
+        String summary = out.summary() == null ? "" : truncate(out.summary().trim(), 500);
+        return new ReviewAnalysisResult(sentiment, score, themes, summary, Boolean.TRUE.equals(out.flagged()));
+    }
+
+    // ---------- tom tat 1 mon hoc ----------
+
+    @Override
+    public CourseSummaryResult summarizeCourse(CourseSummaryInput input) {
+        String json = generateJson(
+                PromptTemplates.COURSE_SUMMARY_PROMPT,
+                buildSummaryPrompt(input),
+                PromptTemplates.courseSummarySchema());
+        SummaryOutput out = readJson(json, SummaryOutput.class);
+
+        String overview = out.overview() == null ? "" : out.overview().trim();
+        if (overview.isEmpty()) {
+            throw new AiException("Gemini tra ve tom tat rong", AiException.Kind.RETRYABLE);
+        }
+        return new CourseSummaryResult(overview, cleanList(out.strengths()), cleanList(out.improvements()));
+    }
+
+    private String buildSummaryPrompt(CourseSummaryInput in) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Môn học: ").append(in.courseName()).append("\n");
+        sb.append("Số đánh giá đã phân tích: ").append(in.analyzedCount())
+                .append(" (tích cực ").append(in.positive())
+                .append(", trung lập ").append(in.neutral())
+                .append(", tiêu cực ").append(in.negative()).append(")\n");
+
+        if (!in.criterionAverages().isEmpty()) {
+            sb.append("Điểm trung bình theo tiêu chí (thang 1-5):\n");
+            in.criterionAverages().forEach((name, avg) -> sb.append("- ").append(name).append(": ").append(avg).append("\n"));
+        }
+        if (!in.topThemes().isEmpty()) {
+            sb.append("Chủ đề được nhắc nhiều: ").append(String.join(", ", in.topThemes())).append("\n");
+        }
+
+        sb.append("\nCác nhận xét của sinh viên (mỗi nhận xét nằm trong một thẻ <nhan_xet>):\n");
+        for (String c : in.comments()) {
+            sb.append("<nhan_xet>\n").append(neutralize(c)).append("\n</nhan_xet>\n");
+        }
+        return sb.toString();
+    }
+
+    private static List<String> cleanList(List<String> list) {
+        if (list == null) return List.of();
+        return list.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(s -> truncate(s, 400))
+                .limit(4)
+                .toList();
+    }
+
+    // ---------- goi Gemini ----------
+
+    private String generateJson(String systemPrompt, String userText, Map<String, Object> schema) {
         Map<String, Object> body = Map.of(
-                "systemInstruction", Map.of("parts", List.of(Map.of("text", PromptTemplates.SYSTEM_PROMPT))),
-                "contents", List.of(Map.of(
-                        "role", "user",
-                        "parts", List.of(Map.of("text", "<nhan_xet>\n" + safeComment + "\n</nhan_xet>")))),
+                "systemInstruction", Map.of("parts", List.of(Map.of("text", systemPrompt))),
+                "contents", List.of(Map.of("role", "user", "parts", List.of(Map.of("text", userText)))),
                 "generationConfig", Map.of(
                         "responseMimeType", "application/json",
-                        "responseJsonSchema", PromptTemplates.responseSchema())
+                        "responseJsonSchema", schema)
         );
 
         GeminiResponse response;
@@ -63,20 +144,19 @@ public class GeminiAiClient implements AiClient {
                     .body(GeminiResponse.class);
         } catch (RestClientResponseException e) {
             int status = e.getStatusCode().value();
-            String detail = truncate(e.getResponseBodyAsString(), 300);
             if (status == 429) {
                 throw new AiException("Gemini bao het han muc (429)", AiException.Kind.RATE_LIMITED);
             }
             AiException.Kind kind = status >= 500 ? AiException.Kind.RETRYABLE : AiException.Kind.FATAL;
-            throw new AiException("Gemini tra ve HTTP " + status + ": " + detail, kind);
+            throw new AiException("Gemini tra ve HTTP " + status + ": " + truncate(e.getResponseBodyAsString(), 300), kind);
         } catch (RestClientException e) {
             throw new AiException("Khong goi duoc Gemini: " + e.getMessage(), AiException.Kind.RETRYABLE);
         }
 
-        return parse(response);
+        return extractText(response);
     }
 
-    private ReviewAnalysisResult parse(GeminiResponse response) {
+    private String extractText(GeminiResponse response) {
         if (response == null) {
             throw new AiException("Gemini tra ve phan hoi rong", AiException.Kind.RETRYABLE);
         }
@@ -92,7 +172,7 @@ public class GeminiAiClient implements AiClient {
         if (candidate != null && candidate.content() != null && candidate.content().parts() != null) {
             text = candidate.content().parts().stream()
                     .map(GeminiResponse.Part::text)
-                    .filter(t -> t != null)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.joining());
         }
 
@@ -104,36 +184,22 @@ public class GeminiAiClient implements AiClient {
             throw new AiException("Gemini khong tra ve noi dung (finishReason=" + reason + ")",
                     AiException.Kind.RETRYABLE);
         }
+        return text;
+    }
 
-        ModelOutput out;
+    private <T> T readJson(String text, Class<T> type) {
         try {
-            out = objectMapper.readValue(stripFences(text), ModelOutput.class);
+            return objectMapper.readValue(stripFences(text), type);
         } catch (Exception e) {
             throw new AiException("Khong doc duoc JSON tu Gemini", AiException.Kind.RETRYABLE);
         }
-        return sanitize(out);
     }
 
-    private ReviewAnalysisResult sanitize(ModelOutput out) {
-        double score = out.score() == null ? 0 : Math.max(-1.0, Math.min(1.0, out.score()));
+    // ---------- tien ich ----------
 
-        Sentiment sentiment;
-        try {
-            sentiment = Sentiment.valueOf(out.sentiment().trim().toUpperCase(Locale.ROOT));
-        } catch (Exception e) {
-            sentiment = score > 0.25 ? Sentiment.POSITIVE : score < -0.25 ? Sentiment.NEGATIVE : Sentiment.NEUTRAL;
-        }
-
-        List<String> themes = (out.themes() == null ? List.<String>of() : out.themes()).stream()
-                .filter(t -> t != null)
-                .map(t -> t.trim().toUpperCase(Locale.ROOT))
-                .filter(PromptTemplates.THEMES::contains)
-                .distinct()
-                .limit(3)
-                .toList();
-
-        String summary = out.summary() == null ? "" : truncate(out.summary().trim(), 500);
-        return new ReviewAnalysisResult(sentiment, score, themes, summary, Boolean.TRUE.equals(out.flagged()));
+    /** Vo hieu hoa dau "<", ">" de noi dung nguoi dung khong thoat khoi the <nhan_xet>. */
+    private static String neutralize(String s) {
+        return s.replace("<", "‹").replace(">", "›");
     }
 
     private static String stripFences(String text) {
@@ -170,4 +236,7 @@ public class GeminiAiClient implements AiClient {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     record ModelOutput(String sentiment, Double score, List<String> themes, String summary, Boolean flagged) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record SummaryOutput(String overview, List<String> strengths, List<String> improvements) {}
 }
