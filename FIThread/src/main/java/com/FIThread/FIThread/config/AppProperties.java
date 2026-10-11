@@ -15,7 +15,10 @@ public class AppProperties {
     private String jwtSecret;
     private int jwtExpirationHours = 24;
     private int refreshExpirationDays = 30;
+    private int minReviewsForStats = 5;
 
+    public int getMinReviewsForStats() { return minReviewsForStats; }
+    public void setMinReviewsForStats(int minReviewsForStats) { this.minReviewsForStats = minReviewsForStats; }
     public int getRefreshExpirationDays() { return refreshExpirationDays; }
     public void setRefreshExpirationDays(int refreshExpirationDays) { this.refreshExpirationDays = refreshExpirationDays; }
     public String getJwtSecret() { return jwtSecret; }

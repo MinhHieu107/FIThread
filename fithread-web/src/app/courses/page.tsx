@@ -61,23 +61,23 @@ function CoursesList() {
         <input
           type="text"
           placeholder="Tìm theo mã môn hoặc tên môn..."
-          className="flex-1 border border-gray-300 rounded-md px-3 py-2"
+          className="input-field flex-1"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <button
           type="submit"
-          className="bg-brand hover:bg-brand-dark text-white rounded-md px-4 py-2 font-medium"
+          className="btn-primary"
         >
           Tìm
         </button>
       </form>
 
-      {loading && <p className="text-gray-500">Đang tải...</p>}
+      {loading && <p className="text-ink-muted">Đang tải...</p>}
       {error && <p className="text-red-600">{error}</p>}
 
       {!loading && !error && courses.length === 0 && (
-        <p className="text-gray-500">Không tìm thấy môn học nào.</p>
+        <p className="text-ink-muted">Không tìm thấy môn học nào.</p>
       )}
 
       <div className="space-y-3">
@@ -85,19 +85,19 @@ function CoursesList() {
           <Link
             key={course.id}
             href={`/courses/detail?id=${course.id}`}
-            className="block border border-gray-200 rounded-md p-4 bg-white hover:border-brand transition-colors"
+            className="card-hover block"
           >
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-sm text-gray-500">{course.code}</span>
+                <span className="text-sm text-ink-muted">{course.code}</span>
                 <h2 className="font-medium">{course.name}</h2>
                 {course.specialization && (
-                  <span className="inline-block mt-1 text-xs bg-brand-light text-brand-dark rounded px-2 py-0.5">
+                  <span className="badge mt-1">
                     {course.specialization}
                   </span>
                 )}
               </div>
-              <span className="text-sm text-gray-500">{course.credits} tín chỉ</span>
+              <span className="text-sm text-ink-muted">{course.credits} tín chỉ</span>
             </div>
           </Link>
         ))}

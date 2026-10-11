@@ -53,7 +53,7 @@ function VerifyForm() {
           type="email"
           placeholder="Email"
           required
-          className="w-full border border-gray-300 rounded-md px-3 py-2"
+          className="input-field"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -62,7 +62,7 @@ function VerifyForm() {
           placeholder="Mã OTP (6 số)"
           required
           maxLength={6}
-          className="w-full border border-gray-300 rounded-md px-3 py-2"
+          className="input-field"
           value={otp}
           onChange={(e) => setOtp(e.target.value)}
         />
@@ -71,7 +71,7 @@ function VerifyForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-brand hover:bg-brand-dark text-white rounded-md py-2 font-medium disabled:opacity-50"
+          className="btn-primary w-full"
         >
           {loading ? "Đang xử lý..." : "Xác thực"}
         </button>

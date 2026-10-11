@@ -16,14 +16,22 @@ function getRefreshToken() {
   return typeof window !== "undefined" ? localStorage.getItem("fithread_refresh_token") : null;
 }
 
+function notifyAuthChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("fithread-auth-changed"));
+  }
+}
+
 export function saveTokens(accessToken: string, refreshToken: string) {
   localStorage.setItem("fithread_access_token", accessToken);
   localStorage.setItem("fithread_refresh_token", refreshToken);
+  notifyAuthChanged();
 }
 
 export function clearTokens() {
   localStorage.removeItem("fithread_access_token");
   localStorage.removeItem("fithread_refresh_token");
+  notifyAuthChanged();
 }
 
 let refreshPromise: Promise<string | null> | null = null;

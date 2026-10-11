@@ -10,7 +10,14 @@ export default function Navbar() {
   const router = useRouter();
 
   useEffect(() => {
-    setLoggedIn(isLoggedIn());
+    const sync = () => setLoggedIn(isLoggedIn());
+    sync();
+    window.addEventListener("fithread-auth-changed", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("fithread-auth-changed", sync);
+      window.removeEventListener("storage", sync);
+    };
   }, []);
 
   async function handleLogout() {
@@ -20,18 +27,18 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="flex items-center gap-6 px-8 py-4 bg-white border-b border-gray-200">
-      <Link href="/" className="font-bold text-lg text-brand-dark">FIThread</Link>
-      <Link href="/courses" className="text-gray-700 hover:text-brand-dark">Môn học</Link>
-      <Link href="/alumni" className="text-gray-700 hover:text-brand-dark">Alumni</Link>
-      <Link href="/timeline" className="text-gray-700 hover:text-brand-dark">Dòng thời gian</Link>
+    <nav className="flex items-center gap-6 px-8 py-4 bg-white border-b border-brand-light">
+      <Link href="/" className="font-bold text-lg text-brand-darker">FIThread</Link>
+      <Link href="/courses" className="text-ink hover:text-brand-darker">Môn học</Link>
+      <Link href="/alumni" className="text-ink hover:text-brand-darker">Alumni</Link>
+      <Link href="/timeline" className="text-ink hover:text-brand-darker">Dòng thời gian</Link>
       <span className="flex-1" />
       {loggedIn ? (
-        <button onClick={handleLogout} className="text-gray-700 hover:text-brand-dark">
+        <button onClick={handleLogout} className="text-ink hover:text-brand-darker">
           Đăng xuất
         </button>
       ) : (
-        <Link href="/login" className="text-gray-700 hover:text-brand-dark">Đăng nhập</Link>
+        <Link href="/login" className="text-ink hover:text-brand-darker">Đăng nhập</Link>
       )}
     </nav>
   );

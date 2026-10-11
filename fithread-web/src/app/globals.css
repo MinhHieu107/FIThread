@@ -1,26 +1,51 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-brand: #D1BD9B;
+  --color-brand-dark: #A9875C;
+  --color-brand-darker: #8A6D47;
+  --color-brand-light: #EDE4D3;
+  --color-brand-lighter: #F7F2E9;
+  --color-ink: #3A3128;
+  --color-ink-muted: #7A6F5F;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    @apply bg-brand-lighter text-ink;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .card {
+    @apply bg-white border border-brand-light rounded-lg p-4 shadow-sm;
+  }
+
+  .card-hover {
+    @apply bg-white border border-brand-light rounded-lg p-4 shadow-sm
+           hover:border-brand hover:shadow-md transition-all;
+  }
+
+  .input-field {
+    @apply w-full border border-brand-light rounded-md px-3 py-2 bg-white text-ink
+           focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand;
+  }
+
+  .btn-primary {
+    @apply bg-brand-dark hover:bg-brand-darker text-white rounded-md px-4 py-2 font-medium
+           transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply border border-brand-light text-ink hover:bg-brand-light rounded-md px-4 py-2 font-medium
+           transition-colors;
+  }
+
+  .badge {
+    @apply inline-block text-xs bg-brand-light text-brand-darker rounded px-2 py-0.5;
+  }
+
+  .link-brand {
+    @apply text-brand-darker hover:underline;
+  }
 }

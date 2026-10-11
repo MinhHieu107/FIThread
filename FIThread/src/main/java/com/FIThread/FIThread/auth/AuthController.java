@@ -11,7 +11,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import java.util.Map;
 
 @RestController
@@ -77,11 +78,9 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public Map<String, String> me(@RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.substring(7);
-        String email = jwtService.extractEmail(token);
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BusinessException("Khong tim thay nguoi dung"));
+    public Map<String, String> me(Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new BusinessException("Khong tim thay nguoi dung", HttpStatus.UNAUTHORIZED));
         return Map.of("email", user.getEmail(), "fullName", user.getFullName(), "role", user.getRole().name());
     }
 }

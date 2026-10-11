@@ -36,7 +36,7 @@ export default function RegisterPage() {
           type="email"
           placeholder="Email trường (@hanu.edu.vn)"
           required
-          className="w-full border border-gray-300 rounded-md px-3 py-2"
+          className="input-field"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
         />
@@ -44,7 +44,7 @@ export default function RegisterPage() {
           type="text"
           placeholder="Họ tên"
           required
-          className="w-full border border-gray-300 rounded-md px-3 py-2"
+          className="input-field"
           value={form.fullName}
           onChange={(e) => setForm({ ...form, fullName: e.target.value })}
         />
@@ -53,14 +53,14 @@ export default function RegisterPage() {
           placeholder="Mật khẩu (ít nhất 8 ký tự)"
           required
           minLength={8}
-          className="w-full border border-gray-300 rounded-md px-3 py-2"
+          className="input-field"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
         />
         <input
           type="text"
           placeholder="Khóa (ví dụ K17)"
-          className="w-full border border-gray-300 rounded-md px-3 py-2"
+          className="input-field"
           value={form.cohort}
           onChange={(e) => setForm({ ...form, cohort: e.target.value })}
         />
@@ -68,7 +68,7 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-brand hover:bg-brand-dark text-white rounded-md py-2 font-medium disabled:opacity-50"
+          className="btn-primary w-full"
         >
           {loading ? "Đang xử lý..." : "Đăng ký"}
         </button>
