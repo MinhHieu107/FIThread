@@ -1,0 +1,61 @@
+# Danh sach tu ngu khong phu hop. Moi dong 1 tu hoac cum tu, khong phan biet hoa thuong.
+# Dong bat dau bang # la chu thich. Sua file xong can chay lai backend moi co hieu luc.
+# Tu co dau chi khop khi nguoi dung go co dau; cac dang khong dau duoc liet ke rieng o phan duoi.
+
+# --- Chui the / tuc tiu (co dau) ---
+địt
+đụ
+đéo
+lồn
+cặc
+buồi
+đĩ
+đm
+đmm
+đcm
+đcmm
+cứt
+
+
+# --- Xuc pham ca nhan (co dau) ---
+thằng chó
+đồ chó
+con chó
+óc chó
+chó chết
+đồ ngu
+thằng ngu
+con ngu
+mất dạy
+khốn nạn
+súc vật
+đồ rác rưởi
+ngu
+chó
+dốt
+óc
+rác
+# --- Dang khong dau (chi nhung cum khong gay chan nham) ---
+dm
+dmm
+dcm
+dcmm
+vcl
+vkl
+dit me
+dit con me
+du ma
+con cac
+oc cho
+do cho
+thang cho
+do ngu
+thang ngu
+con ngu
+mat day
+khon nan
+suc vat
+cho
+cac
+dit
+djt

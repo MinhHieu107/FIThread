@@ -12,7 +12,8 @@ public record ReviewResponse(
         Instant createdAt,
         List<ScoreView> scores,
         double average,
-        boolean mine
+        boolean mine,
+        String status
 ) {
     public record ScoreView(Long criterionId, String criterionName, int score) {}
 }

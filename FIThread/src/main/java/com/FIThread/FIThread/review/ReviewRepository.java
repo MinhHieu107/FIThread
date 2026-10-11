@@ -30,4 +30,14 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             """)
     List<Object[]> averageScoresByCourse(@Param("courseId") Long courseId,
                                          @Param("status") ReviewStatus status);
+
+    List<Review> findByStatusOrderByCreatedAtDesc(ReviewStatus status, Pageable pageable);
+
+    @Query("""
+        select r from Review r
+        where r.status = :status
+          and exists (select 1 from ReviewReport rp where rp.review = r)
+        order by r.createdAt desc
+        """)
+    List<Review> findReportedByStatus(@Param("status") ReviewStatus status, Pageable pageable);
 }

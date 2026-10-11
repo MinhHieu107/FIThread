@@ -27,7 +27,7 @@ public class ReviewService {
     private final RubricCriterionRepository rubricRepository;
     private final UserRepository userRepository;
     private final AppProperties appProperties;
-
+    private final ModerationService moderationService;
     @Transactional
     public ReviewResponse create(String email, Long offeringId, ReviewRequest request) {
         User user = findUser(email);
@@ -40,6 +40,7 @@ public class ReviewService {
 
         Map<Long, RubricCriterion> criteria = loadCriteria();
         validateScores(request, criteria);
+        moderationService.assertClean(request.getComment());
 
         Review review = new Review();
         review.setUser(user);
@@ -68,7 +69,7 @@ public class ReviewService {
 
         Map<Long, RubricCriterion> criteria = loadCriteria();
         validateScores(request, criteria);
-
+        moderationService.assertClean(request.getComment());
         review.setComment(request.getComment().trim());
 
         // Cap nhat diem tai cho (khong xoa roi tao lai) de khong vuong rang buoc unique (review_id, criterion_id)
@@ -198,7 +199,8 @@ public class ReviewService {
                 r.getCreatedAt(),
                 scores,
                 round1(avg),
-                r.getUser().getId().equals(viewerId)
+                r.getUser().getId().equals(viewerId),
+                r.getStatus().name()
         );
     }
 

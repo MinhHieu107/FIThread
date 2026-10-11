@@ -14,7 +14,14 @@ import java.util.Map;
 public class ReviewController {
 
     private final ReviewService reviewService;
-
+    private final ReportService reportService;
+    @PostMapping("/api/reviews/{id}/report")
+    public Map<String, String> report(@PathVariable Long id,
+                                      @Valid @RequestBody ReportRequest request,
+                                      Authentication auth) {
+        reportService.report(auth.getName(), id, request.getReason());
+        return Map.of("message", "Da gui bao cao");
+    }
     @PostMapping("/api/offerings/{offeringId}/reviews")
     public ReviewResponse create(@PathVariable Long offeringId,
                                  @Valid @RequestBody ReviewRequest request,

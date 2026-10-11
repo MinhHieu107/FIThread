@@ -1,0 +1,12 @@
+package com.FIThread.FIThread.review;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface ReviewReportRepository extends JpaRepository<ReviewReport, Long> {
+    boolean existsByReviewIdAndReporterId(Long reviewId, Long reporterId);
+    long countByReviewId(Long reviewId);
+    List<ReviewReport> findByReviewId(Long reviewId);
+    void deleteByReviewId(Long reviewId);
+}
