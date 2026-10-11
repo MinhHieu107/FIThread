@@ -13,5 +13,10 @@ public record ModerationReviewResponse(
         String status,
         Instant createdAt,
         int reportCount,
-        List<String> reasons
-) {}
+        List<String> reasons,
+        boolean aiFlagged,
+        String aiSummary,
+        List<HistoryEntry> history
+) {
+    public record HistoryEntry(String action, String reason, String adminName, Instant createdAt) {}
+}

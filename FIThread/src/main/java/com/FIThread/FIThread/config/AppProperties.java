@@ -34,4 +34,22 @@ public class AppProperties {
     public void setOtpExpiryMinutes(int otpExpiryMinutes) { this.otpExpiryMinutes = otpExpiryMinutes; }
     public int getOtpMaxAttempts() { return otpMaxAttempts; }
     public void setOtpMaxAttempts(int otpMaxAttempts) { this.otpMaxAttempts = otpMaxAttempts; }
+    private Ai ai = new Ai();
+
+    public Ai getAi() { return ai; }
+    public void setAi(Ai ai) { this.ai = ai; }
+
+    @lombok.Getter
+    @lombok.Setter
+    public static class Ai {
+        private boolean enabled = true;
+        private String apiKey;
+        private String model = "gemini-3.5-flash-lite";
+        private String baseUrl = "https://generativelanguage.googleapis.com/v1beta";
+        private long minIntervalMs = 6000;   // giãn cách giữa 2 lần gọi API
+        private int maxAttempts = 5;
+        private int batchSize = 10;
+        private long pollIntervalMs = 5000;
+    }
+
 }

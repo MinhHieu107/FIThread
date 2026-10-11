@@ -1,7 +1,10 @@
 package com.FIThread.FIThread.review;
 
+import com.FIThread.FIThread.review.dto.ModerationActionRequest;
 import com.FIThread.FIThread.review.dto.ModerationReviewResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,14 +23,18 @@ public class AdminModerationController {
     }
 
     @PostMapping("/reviews/{id}/hide")
-    public Map<String, String> hide(@PathVariable Long id) {
-        moderationService.hide(id);
+    public Map<String, String> hide(@PathVariable Long id,
+                                    @Valid @RequestBody ModerationActionRequest request,
+                                    Authentication auth) {
+        moderationService.hide(auth.getName(), id, request.getReason());
         return Map.of("message", "Da an danh gia");
     }
 
     @PostMapping("/reviews/{id}/restore")
-    public Map<String, String> restore(@PathVariable Long id) {
-        moderationService.restore(id);
+    public Map<String, String> restore(@PathVariable Long id,
+                                       @Valid @RequestBody(required = false) ModerationActionRequest request,
+                                       Authentication auth) {
+        moderationService.restore(auth.getName(), id, request == null ? null : request.getReason());
         return Map.of("message", "Da hien thi lai danh gia");
     }
 }
