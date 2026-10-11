@@ -16,7 +16,8 @@ export default function ReviewList({ courseId, refreshKey, onEdit, onChanged }: 
   const [page, setPage] = useState(0);
   const [data, setData] = useState<ReviewPage | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [notice, setNotice] = useState<{ type: "ok" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -26,14 +27,14 @@ export default function ReviewList({ courseId, refreshKey, onEdit, onChanged }: 
       .then((res) => {
         if (cancelled) return;
         if (res.content.length === 0 && page > 0) {
-          setPage(page - 1); // vừa xóa hết đánh giá ở trang cuối
+          setPage(page - 1); // vừa xóa/ẩn hết đánh giá ở trang cuối
           return;
         }
         setData(res);
-        setError("");
+        setLoadError("");
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra");
+        if (!cancelled) setLoadError(err instanceof ApiError ? err.message : "Có lỗi xảy ra");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -46,22 +47,43 @@ export default function ReviewList({ courseId, refreshKey, onEdit, onChanged }: 
 
   async function handleDelete(reviewId: number) {
     if (!confirm("Xóa đánh giá này?")) return;
+    setNotice(null);
     try {
       await apiFetch(`/reviews/${reviewId}`, { method: "DELETE" });
       onChanged();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra");
+      setNotice({ type: "error", text: err instanceof ApiError ? err.message : "Có lỗi xảy ra" });
+    }
+  }
+
+  async function handleReport(reviewId: number) {
+    const reason = window.prompt("Lý do báo cáo (không bắt buộc):");
+    if (reason === null) return; // bấm Hủy
+    setNotice(null);
+    try {
+      await apiFetch(`/reviews/${reviewId}/report`, {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      });
+      setNotice({ type: "ok", text: "Đã gửi báo cáo. Cảm ơn bạn!" });
+      onChanged(); // làm mới danh sách phòng khi đánh giá vừa bị tự động ẩn
+    } catch (err) {
+      setNotice({ type: "error", text: err instanceof ApiError ? err.message : "Có lỗi xảy ra" });
     }
   }
 
   if (loading && !data) return <p className="text-ink-muted text-sm">Đang tải...</p>;
-  if (error) return <p className="text-red-600 text-sm">{error}</p>;
+  if (loadError) return <p className="text-red-600 text-sm">{loadError}</p>;
   if (!data || data.content.length === 0) {
     return <p className="text-ink-muted text-sm">Chưa có đánh giá nào cho môn học này.</p>;
   }
 
   return (
     <div className="space-y-3">
+      {notice && (
+        <p className={`text-sm ${notice.type === "ok" ? "text-green-700" : "text-red-600"}`}>{notice.text}</p>
+      )}
+
       {data.content.map((r) => (
         <div key={r.id} className="card space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -90,16 +112,22 @@ export default function ReviewList({ courseId, refreshKey, onEdit, onChanged }: 
 
           <div className="flex items-center justify-between text-xs text-ink-muted">
             <span>{new Date(r.createdAt).toLocaleDateString("vi-VN")}</span>
-            {r.mine && (
-              <div className="flex gap-3">
-                <button onClick={() => onEdit(r.offeringId)} className="link-brand">
-                  Sửa
+            <div className="flex gap-3">
+              {r.mine ? (
+                <>
+                  <button onClick={() => onEdit(r.offeringId)} className="link-brand">
+                    Sửa
+                  </button>
+                  <button onClick={() => handleDelete(r.id)} className="text-red-600 hover:underline">
+                    Xóa
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => handleReport(r.id)} className="hover:text-red-600 hover:underline">
+                  Báo cáo
                 </button>
-                <button onClick={() => handleDelete(r.id)} className="text-red-600 hover:underline">
-                  Xóa
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       ))}

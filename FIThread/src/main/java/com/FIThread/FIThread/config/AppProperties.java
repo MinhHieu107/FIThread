@@ -16,7 +16,10 @@ public class AppProperties {
     private int jwtExpirationHours = 24;
     private int refreshExpirationDays = 30;
     private int minReviewsForStats = 5;
+    private int reportsToAutoHide = 3;
 
+    public int getReportsToAutoHide() { return reportsToAutoHide; }
+    public void setReportsToAutoHide(int reportsToAutoHide) { this.reportsToAutoHide = reportsToAutoHide; }
     public int getMinReviewsForStats() { return minReviewsForStats; }
     public void setMinReviewsForStats(int minReviewsForStats) { this.minReviewsForStats = minReviewsForStats; }
     public int getRefreshExpirationDays() { return refreshExpirationDays; }

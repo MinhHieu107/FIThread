@@ -21,6 +21,7 @@ export interface Review {
   scores: ScoreView[];
   average: number;
   mine: boolean;
+  status: string;
 }
 
 export interface ReviewPage {
@@ -42,4 +43,17 @@ export interface CourseStats {
   hidden: boolean;
   overallAverage: number | null;
   criteria: CriterionStat[];
+}
+
+export interface ModerationReview {
+  id: number;
+  courseCode: string;
+  courseName: string;
+  lecturerName: string;
+  semester: string;
+  comment: string;
+  status: string;
+  createdAt: string;
+  reportCount: number;
+  reasons: string[];
 }

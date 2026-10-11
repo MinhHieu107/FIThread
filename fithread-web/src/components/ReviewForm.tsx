@@ -124,7 +124,11 @@ export default function ReviewForm({
         <h2 className="font-semibold">{existing ? "Sửa đánh giá của bạn" : "Viết đánh giá"}</h2>
         <p className="text-xs text-ink-muted mt-1">Đánh giá của bạn được hiển thị ẩn danh.</p>
       </div>
-
+        {existing && existing.status !== "PUBLISHED" && (
+            <div className="rounded-md bg-brand-light px-3 py-2 text-sm">
+                Đánh giá này đang bị ẩn và chờ admin xem xét nên người khác chưa nhìn thấy. Bạn vẫn có thể sửa hoặc xóa.
+            </div>
+        )}
       <select
         className="input-field"
         value={selectedOfferingId}
