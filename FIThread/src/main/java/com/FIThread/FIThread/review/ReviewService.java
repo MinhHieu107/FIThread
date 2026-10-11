@@ -1,5 +1,6 @@
 package com.FIThread.FIThread.review;
 
+import com.FIThread.FIThread.analysis.AnalysisService;
 import com.FIThread.FIThread.common.exception.BusinessException;
 import com.FIThread.FIThread.config.AppProperties;
 import com.FIThread.FIThread.course.*;
@@ -28,6 +29,7 @@ public class ReviewService {
     private final UserRepository userRepository;
     private final AppProperties appProperties;
     private final ModerationService moderationService;
+    private final AnalysisService analysisService;
     @Transactional
     public ReviewResponse create(String email, Long offeringId, ReviewRequest request) {
         User user = findUser(email);
@@ -59,6 +61,7 @@ public class ReviewService {
         } catch (DataIntegrityViolationException e) {
             throw new BusinessException("Ban da danh gia lan mo lop nay, hay sua danh gia cu", HttpStatus.CONFLICT);
         }
+        analysisService.requestAnalysis(review);
         return toResponse(review, user.getId());
     }
 
@@ -87,6 +90,7 @@ public class ReviewService {
         }
 
         reviewRepository.save(review);
+        analysisService.requestAnalysis(review);
         return toResponse(review, user.getId());
     }
 

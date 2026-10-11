@@ -28,18 +28,18 @@ echo "Tiến độ: $done/$total ($((100*done/total))%)"
 
 Trạng thái: ⬜ chưa bắt đầu · 🟡 đang làm · ✅ xong
 
-| Phase | Nội dung | Ngày (2026) | Cột mốc | Trạng thái |
-|---|---|---|---|---|
-| 0 | Khởi tạo & nền tảng | D1 · 01/10 | App chạy, kết nối MySQL, có khung giao diện | Xong |
-| 1 | Đăng ký, xác thực email, đăng nhập | D2–4 · 02–04/10 | Đăng ký → OTP → đăng nhập chạy được | Xong |
-| 2 | Danh mục môn học & giảng viên | D5–6 · 05–06/10 | Xem/tìm môn học, có dữ liệu mẫu | Đang làm |
-| 3 | Đánh giá môn học theo rubric | D7–9 · 07–09/10 | Gửi và xem đánh giá ẩn danh | ⬜ |
-| 4 | AI phân tích cảm xúc & dashboard | D10–12 · 10–12/10 | Dashboard khoa hiển thị insight từ AI | ⬜ |
-| 5 | Chatbot hỏi đáp về khoa, trường | D13–15 · 13–15/10 | Chatbot trả lời đúng từ kho tri thức | ⬜ |
-| 6 | Alumni network | D16–17 · 16–17/10 | Tìm alumni, xem dòng thời gian 20 năm | ⬜ |
-| — | Đệm, test tổng thể, sửa lỗi | D18–19 · 18–19/10 | Chạy hết checklist demo không lỗi nặng | ⬜ |
-| — | **Chốt mốc 80–90%** | D20 · 20/10 | Gắn tag `v0.9`, liệt kê rõ 10–20% còn thiếu | ⬜ |
-| 7 | Hoàn thiện, triển khai, demo | sau 20/10 | Bản chạy online + kịch bản demo | ⬜ |
+| Phase | Nội dung | Ngày (2026) | Cột mốc | Trạng thái   |
+|---|---|---|---|--------------|
+| 0 | Khởi tạo & nền tảng | D1 · 01/10 | App chạy, kết nối MySQL, có khung giao diện | Xong         |
+| 1 | Đăng ký, xác thực email, đăng nhập | D2–4 · 02–04/10 | Đăng ký → OTP → đăng nhập chạy được | Xong         |
+| 2 | Danh mục môn học & giảng viên | D5–6 · 05–06/10 | Xem/tìm môn học, có dữ liệu mẫu | Xong         |
+| 3 | Đánh giá môn học theo rubric | D7–9 · 07–09/10 | Gửi và xem đánh giá ẩn danh | Xong         |
+| 4 | AI phân tích cảm xúc & dashboard | D10–12 · 10–12/10 | Dashboard khoa hiển thị insight từ AI | Bắt đầu làm  |
+| 5 | Chatbot hỏi đáp về khoa, trường | D13–15 · 13–15/10 | Chatbot trả lời đúng từ kho tri thức | ⬜            |
+| 6 | Alumni network | D16–17 · 16–17/10 | Tìm alumni, xem dòng thời gian 20 năm | ⬜            |
+| — | Đệm, test tổng thể, sửa lỗi | D18–19 · 18–19/10 | Chạy hết checklist demo không lỗi nặng | ⬜            |
+| — | **Chốt mốc 80–90%** | D20 · 20/10 | Gắn tag `v0.9`, liệt kê rõ 10–20% còn thiếu | ⬜            |
+| 7 | Hoàn thiện, triển khai, demo | sau 20/10 | Bản chạy online + kịch bản demo | ⬜            |
 
 ## 2. Phân công (điền tên)
 
