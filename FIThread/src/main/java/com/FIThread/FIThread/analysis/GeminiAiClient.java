@@ -11,10 +11,7 @@ import org.springframework.web.client.RestClientResponseException;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -87,7 +84,34 @@ public class GeminiAiClient implements AiClient {
         }
         return new CourseSummaryResult(overview, cleanList(out.strengths()), cleanList(out.improvements()));
     }
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record ChatOutput(String answer, String status, List<Integer> sourceIds) {}
+    @Override
+    public ChatResult chat(String systemPrompt, List<ChatTurn> history, String userMessage) {
+        List<Map<String, Object>> contents = new ArrayList<>();
+        for (ChatTurn turn : history) {
+            contents.add(Map.<String, Object>of("role", turn.role(), "parts", List.of(Map.of("text", turn.text()))));
+        }
+        contents.add(Map.<String, Object>of("role", "user", "parts", List.of(Map.of("text", userMessage))));
 
+        String json = generateJson(systemPrompt, contents, PromptTemplates.chatSchema());
+        ChatOutput out = readJson(json, ChatOutput.class);
+
+        String answer = out.answer() == null ? "" : out.answer().trim();
+        if (answer.isEmpty()) {
+            throw new AiException("Gemini tra ve cau tra loi rong", AiException.Kind.RETRYABLE);
+        }
+
+        String status = out.status() == null ? "ANSWERED" : out.status().trim().toUpperCase(Locale.ROOT);
+        if (!List.of("ANSWERED", "NO_INFO", "OFF_TOPIC").contains(status)) {
+            status = "ANSWERED";
+        }
+
+        List<Integer> sourceIds = out.sourceIds() == null ? List.of()
+                : out.sourceIds().stream().filter(Objects::nonNull).distinct().limit(5).toList();
+
+        return new ChatResult(truncate(answer, 4000), status, sourceIds);
+    }
     private String buildSummaryPrompt(CourseSummaryInput in) {
         StringBuilder sb = new StringBuilder();
         sb.append("Môn học: ").append(in.courseName()).append("\n");
@@ -125,9 +149,15 @@ public class GeminiAiClient implements AiClient {
     // ---------- goi Gemini ----------
 
     private String generateJson(String systemPrompt, String userText, Map<String, Object> schema) {
+        return generateJson(systemPrompt,
+                List.of(Map.<String, Object>of("role", "user", "parts", List.of(Map.of("text", userText)))),
+                schema);
+    }
+
+    private String generateJson(String systemPrompt, List<Map<String, Object>> contents, Map<String, Object> schema) {
         Map<String, Object> body = Map.of(
                 "systemInstruction", Map.of("parts", List.of(Map.of("text", systemPrompt))),
-                "contents", List.of(Map.of("role", "user", "parts", List.of(Map.of("text", userText)))),
+                "contents", contents,
                 "generationConfig", Map.of(
                         "responseMimeType", "application/json",
                         "responseJsonSchema", schema)

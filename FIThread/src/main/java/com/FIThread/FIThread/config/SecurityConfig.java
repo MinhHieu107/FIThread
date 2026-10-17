@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/me").authenticated()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/health").permitAll()
+                        .requestMatchers("/api/alumni/me").hasRole("ALUMNI")
                         .requestMatchers(HttpMethod.POST, "/api/offerings/*/reviews").hasAnyRole("STUDENT", "ALUMNI")
                         .requestMatchers(HttpMethod.PUT, "/api/reviews/*").hasAnyRole("STUDENT", "ALUMNI")
                         .requestMatchers(HttpMethod.DELETE, "/api/reviews/*").hasAnyRole("STUDENT", "ALUMNI")

@@ -4,5 +4,6 @@ public enum UserStatus {
     PENDING_EMAIL,
     PENDING_APPROVAL,
     ACTIVE,
+    REJECTED,
     BANNED
 }

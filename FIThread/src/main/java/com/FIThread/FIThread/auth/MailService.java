@@ -28,4 +28,17 @@ public class MailService {
                 """.formatted(fullName, otpCode));
         mailSender.send(message);
     }
+
+    @Async
+    public void sendPlain(String toEmail, String subject, String text) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(toEmail);
+            message.setSubject(subject);
+            message.setText(text);
+            mailSender.send(message);
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(MailService.class).warn("Gui email that bai: {}", e.getMessage());
+        }
+    }
 }

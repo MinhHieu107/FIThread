@@ -2,6 +2,7 @@ package com.FIThread.FIThread.auth;
 
 import com.FIThread.FIThread.common.exception.BusinessException;
 import com.FIThread.FIThread.config.AppProperties;
+import com.FIThread.FIThread.user.Role;
 import com.FIThread.FIThread.user.User;
 import com.FIThread.FIThread.user.UserRepository;
 import com.FIThread.FIThread.user.UserStatus;
@@ -42,7 +43,7 @@ public class EmailVerificationService {
     }
 
     @Transactional
-    public void verify(String email, String otp) {
+    public UserStatus verify(String email, String otp) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException("Khong tim thay nguoi dung", HttpStatus.NOT_FOUND));
 
@@ -71,8 +72,9 @@ public class EmailVerificationService {
         token.setVerifiedAt(Instant.now());
         tokenRepository.save(token);
 
-        user.setStatus(UserStatus.ACTIVE);
+        user.setStatus(user.getRole() == Role.ALUMNI ? UserStatus.PENDING_APPROVAL : UserStatus.ACTIVE);
         userRepository.save(user);
+        return user.getStatus();
     }
 
     private String generateOtp() {

@@ -53,6 +53,8 @@ export default function Navbar() {
           <Link href="/admin/moderation" className={`${link} text-sm`}>Kiểm duyệt</Link>
           <Link href="/admin/offerings" className={`${link} text-sm`}>Lần mở lớp</Link>
           <Link href="/admin/catalog" className={`${link} text-sm`}>Nhập môn học</Link>
+          <Link href="/admin/knowledge" className={`${link} text-sm`}>Kho tri thức</Link>
+          <Link href="/admin/unanswered" className={`${link} text-sm`}>Câu hỏi chưa trả lời</Link>
         </>
       )}
 
