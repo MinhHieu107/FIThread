@@ -52,4 +52,34 @@ public class AppProperties {
         private long pollIntervalMs = 5000;
     }
 
+    private Chat chat = new Chat();
+
+    public Chat getChat() { return chat; }
+    public void setChat(Chat chat) { this.chat = chat; }
+
+    @lombok.Getter
+    @lombok.Setter
+    public static class Chat {
+        private int maxContextChars = 60000;  // ngân sách ngữ cảnh gửi cho AI mỗi câu hỏi
+        private int maxQuestionChars = 500;
+        private int maxPerHour = 30;          // số câu hỏi tối đa mỗi người mỗi giờ
+        private int globalPerMinute = 10;     // tổng số câu hỏi mỗi phút của cả hệ thống
+        private int historyMessages = 6;      // số tin nhắn gần nhất đưa vào ngữ cảnh hội thoại
+    }
+
+
+    private String uploadDir = "uploads";
+    public String getUploadDir() { return uploadDir; }
+    public void setUploadDir(String uploadDir) { this.uploadDir = uploadDir; }
+
+    private Alumni alumni = new Alumni();
+    public Alumni getAlumni() { return alumni; }
+    public void setAlumni(Alumni alumni) { this.alumni = alumni; }
+
+    @lombok.Getter
+    @lombok.Setter
+    public static class Alumni {
+        private String contactInfo = "văn phòng Khoa CNTT"; // nơi alumni bị từ chối liên hệ bổ sung minh chứng
+    }
+
 }

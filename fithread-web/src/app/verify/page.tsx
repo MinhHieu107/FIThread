@@ -4,10 +4,11 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiFetch, ApiError } from "@/lib/api";
 import { ApiMessageResponse } from "@/types/auth";
-
+import Link from "next/link";
 function VerifyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [pendingMessage, setPendingMessage] = useState("");
   const [email, setEmail] = useState(searchParams.get("email") || "");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
@@ -19,11 +20,15 @@ function VerifyForm() {
     setError("");
     setLoading(true);
     try {
-      await apiFetch<ApiMessageResponse>("/auth/verify", {
+            const res = await apiFetch<{ message: string; status: string }>("/auth/verify", {
         method: "POST",
         body: JSON.stringify({ email, otp }),
       });
-      router.push("/login");
+      if (res.status === "PENDING_APPROVAL") {
+        setPendingMessage(res.message);
+      } else {
+        router.push("/login");
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra");
     } finally {
@@ -44,7 +49,17 @@ function VerifyForm() {
       setError(err instanceof ApiError ? err.message : "Có lỗi xảy ra");
     }
   }
-
+    if (pendingMessage) {
+    return (
+      <main className="max-w-md mx-auto px-4 py-12 space-y-4">
+        <h1 className="text-2xl font-bold text-brand-darker">Đã xác thực email</h1>
+        <p className="text-sm">{pendingMessage}</p>
+        <Link href="/" className="link-brand text-sm">
+          Về trang chủ
+        </Link>
+      </main>
+    );
+  }
   return (
     <main className="max-w-md mx-auto px-4 py-12">
       <h1 className="text-2xl font-bold mb-6">Xác thực email</h1>
