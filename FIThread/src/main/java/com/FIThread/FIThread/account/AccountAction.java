@@ -1,0 +1,5 @@
+package com.FIThread.FIThread.account;
+
+public enum AccountAction {
+    LOCK, UNLOCK, DELETE, SELF_DELETE, GRADUATE, GRADUATION_APPROVE, GRADUATION_REJECT, REVERT_GRADUATE
+}

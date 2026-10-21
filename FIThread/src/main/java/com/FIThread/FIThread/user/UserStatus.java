@@ -5,5 +5,6 @@ public enum UserStatus {
     PENDING_APPROVAL,
     ACTIVE,
     REJECTED,
-    BANNED
+    BANNED,
+    DELETED
 }

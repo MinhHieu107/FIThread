@@ -4,6 +4,7 @@ export interface CurrentUser {
   email: string;
   fullName: string;
   role: string;
+  needsBackupEmail?: boolean;
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {

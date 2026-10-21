@@ -38,4 +38,16 @@ public class AlumniProfile extends BaseEntity {
 
     @Column(name = "card_photo_path")
     private String cardPhotoPath;
+
+    @Column(name = "backup_email")
+    private String backupEmail;
+
+    @Column(name = "backup_email_verified", nullable = false)
+    private boolean backupEmailVerified = false;
+
+    @Column(name = "backup_email_required", nullable = false)
+    private boolean backupEmailRequired = false;
+
+    @Column(name = "graduation_batch_id")
+    private Long graduationBatchId;
 }

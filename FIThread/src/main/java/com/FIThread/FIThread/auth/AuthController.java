@@ -1,5 +1,6 @@
 package com.FIThread.FIThread.auth;
 
+import com.FIThread.FIThread.alumni.AlumniProfileRepository;
 import com.FIThread.FIThread.auth.dto.*;
 import com.FIThread.FIThread.common.exception.BusinessException;
 import com.FIThread.FIThread.user.User;
@@ -18,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.FIThread.FIThread.config.AppProperties;
 import com.FIThread.FIThread.user.UserStatus;
 import org.springframework.http.HttpStatus;
+import com.FIThread.FIThread.user.Role;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -31,6 +33,7 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final PasswordEncoder passwordEncoder;
     private final AppProperties appProperties;
+    private final AlumniProfileRepository alumniProfileRepository;
     @PostMapping("/register")
     public Map<String, String> register(@Valid @RequestBody RegisterRequest request) {
         userService.register(request);
@@ -65,6 +68,7 @@ public class AuthController {
                     HttpStatus.FORBIDDEN);
             case BANNED -> throw new BusinessException("Tai khoan da bi khoa", HttpStatus.FORBIDDEN);
             case ACTIVE -> { }
+            case DELETED -> throw new BadCredentialsException("Sai email hoac mat khau");
         }
 
         String accessToken = jwtService.generateToken(user.getEmail(), user.getRole().name());
@@ -93,9 +97,16 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public Map<String, String> me(Authentication authentication) {
+    public Map<String, Object> me(Authentication authentication) {
         User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new BusinessException("Khong tim thay nguoi dung", HttpStatus.UNAUTHORIZED));
-        return Map.of("email", user.getEmail(), "fullName", user.getFullName(), "role", user.getRole().name());
+
+        boolean needsBackupEmail = user.getRole() == Role.ALUMNI
+                && alumniProfileRepository.findByUserId(user.getId())
+                .map(p -> p.isBackupEmailRequired() && !p.isBackupEmailVerified())
+                .orElse(false);
+
+        return Map.of("email", user.getEmail(), "fullName", user.getFullName(),
+                "role", user.getRole().name(), "needsBackupEmail", needsBackupEmail);
     }
 }

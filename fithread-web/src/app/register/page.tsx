@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch, ApiError } from "@/lib/api";
 import { RegisterPayload, ApiMessageResponse } from "@/types/auth";
+import Link from "next/link";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -31,6 +32,12 @@ export default function RegisterPage() {
   return (
     <main className="max-w-md mx-auto px-4 py-12">
       <h1 className="text-2xl font-bold mb-6">Đăng ký</h1>
+              <p className="text-sm text-ink-muted text-center">
+          Bạn là cựu sinh viên?{" "}
+          <Link href="/register/alumni" className="link-brand">
+            Đăng ký tại đây
+          </Link>
+        </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="email"

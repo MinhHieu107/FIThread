@@ -59,6 +59,9 @@ public class AlumniDirectoryService {
     public AlumniDetail detail(Long id) {
         AlumniProfile p = profileRepository.findByIdAndUserStatus(id, UserStatus.ACTIVE)
                 .orElseThrow(() -> new BusinessException("Khong tim thay alumni", HttpStatus.NOT_FOUND));
+        if (p.isBackupEmailRequired() && !p.isBackupEmailVerified()) {
+            throw new BusinessException("Khong tim thay alumni", HttpStatus.NOT_FOUND);
+        }
         User u = p.getUser();
         boolean visible = p.isContactVisible();
 

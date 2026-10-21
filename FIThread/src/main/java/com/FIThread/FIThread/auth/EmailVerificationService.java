@@ -42,7 +42,7 @@ public class EmailVerificationService {
         mailService.sendOtpEmail(user.getEmail(), user.getFullName(), otp);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = BusinessException.class)
     public UserStatus verify(String email, String otp) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException("Khong tim thay nguoi dung", HttpStatus.NOT_FOUND));

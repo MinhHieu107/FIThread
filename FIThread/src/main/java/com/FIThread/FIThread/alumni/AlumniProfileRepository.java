@@ -21,6 +21,7 @@ public interface AlumniProfileRepository extends JpaRepository<AlumniProfile, Lo
     @Query(value = """
             select p from AlumniProfile p join fetch p.user u
             where u.status = :status
+              and (p.backupEmailRequired = false or p.backupEmailVerified = true)
               and (:pattern is null or lower(u.fullName) like :pattern
                    or lower(p.company) like :pattern or lower(p.positionTitle) like :pattern)
               and (:industry is null or p.industry = :industry)
@@ -29,6 +30,7 @@ public interface AlumniProfileRepository extends JpaRepository<AlumniProfile, Lo
             countQuery = """
             select count(p) from AlumniProfile p join p.user u
             where u.status = :status
+              and (p.backupEmailRequired = false or p.backupEmailVerified = true)
               and (:pattern is null or lower(u.fullName) like :pattern
                    or lower(p.company) like :pattern or lower(p.positionTitle) like :pattern)
               and (:industry is null or p.industry = :industry)
@@ -39,4 +41,6 @@ public interface AlumniProfileRepository extends JpaRepository<AlumniProfile, Lo
                                @Param("industry") String industry,
                                @Param("year") Integer year,
                                Pageable pageable);
+
+    List<AlumniProfile> findByGraduationBatchId(Long batchId);
 }

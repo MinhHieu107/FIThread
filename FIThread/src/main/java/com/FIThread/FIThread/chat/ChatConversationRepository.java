@@ -5,4 +5,6 @@ import java.util.Optional;
 
 public interface ChatConversationRepository extends JpaRepository<ChatConversation, Long> {
     Optional<ChatConversation> findByIdAndUserId(Long id, Long userId);
+    // chat/ChatConversationRepository.java
+    void deleteByUserId(Long userId);
 }

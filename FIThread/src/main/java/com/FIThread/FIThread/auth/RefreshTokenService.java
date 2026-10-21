@@ -15,7 +15,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.List;
-
+import com.FIThread.FIThread.user.UserStatus;
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenService {
@@ -50,10 +50,14 @@ public class RefreshTokenService {
         RefreshToken matched = findValidToken(rawToken)
                 .orElseThrow(() -> new BusinessException("Refresh token khong hop le hoac da het han", HttpStatus.UNAUTHORIZED));
 
+        User user = matched.getUser();
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new BusinessException("Tai khoan khong con hoat dong", HttpStatus.UNAUTHORIZED);
+        }
+
         matched.setRevokedAt(Instant.now());
         refreshTokenRepository.save(matched);
 
-        User user = matched.getUser();
         String newRefreshToken = issue(user);
         String newAccessToken = jwtService.generateToken(user.getEmail(), user.getRole().name());
 
