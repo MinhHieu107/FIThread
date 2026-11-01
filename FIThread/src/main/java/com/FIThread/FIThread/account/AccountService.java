@@ -28,7 +28,7 @@ import com.FIThread.FIThread.alumni.AlumniProfile;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
-
+import com.FIThread.FIThread.auth.PasswordResetRepository;
 @Service
 @RequiredArgsConstructor
 public class AccountService {
@@ -45,6 +45,7 @@ public class AccountService {
     private final AppProperties appProperties;
     private final GraduationRequestRepository graduationRequestRepository;
     private final BackupEmailVerificationRepository backupEmailRepository;
+    private final PasswordResetRepository passwordResetRepository;
     // ---------- danh sach cho admin ----------
 
     @Transactional(readOnly = true)
@@ -164,6 +165,7 @@ public class AccountService {
         conversationRepository.deleteByUserId(id);
         graduationRequestRepository.deleteByUserId(id);
         backupEmailRepository.deleteByUserId(id);
+        passwordResetRepository.deleteByUserId(id);
         alumniProfileRepository.findByUserId(id).ifPresent(profile -> {
             String photo = profile.getCardPhotoPath();
             alumniProfileRepository.delete(profile);
