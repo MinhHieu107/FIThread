@@ -30,10 +30,13 @@ public class ModerationService {
 
     /** Nem BusinessException (400) neu van ban chua tu cam. */
     public void assertClean(String text) {
+        assertClean(text, "Nhan xet");
+    }
+
+    public void assertClean(String text, String subject) {
         findBlockedTerm(text).ifPresent(term -> {
             throw new BusinessException(
-                    "\n" +
-                            "Chúng mình là sinh viên đại học rồi ăn nói cẩn thận lại nhé");
+                    subject + " chua tu ngu khong phu hop (\"" + term + "\"). Vui long sua lai truoc khi gui.");
         });
     }
 

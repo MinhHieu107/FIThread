@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import com.FIThread.FIThread.auth.PasswordResetRepository;
+import com.FIThread.FIThread.forum.ForumService;
 @Service
 @RequiredArgsConstructor
 public class AccountService {
@@ -46,6 +47,7 @@ public class AccountService {
     private final GraduationRequestRepository graduationRequestRepository;
     private final BackupEmailVerificationRepository backupEmailRepository;
     private final PasswordResetRepository passwordResetRepository;
+    private final ForumService forumService;
     // ---------- danh sach cho admin ----------
 
     @Transactional(readOnly = true)
@@ -159,7 +161,7 @@ public class AccountService {
      */
     private void anonymize(User user) {
         Long id = user.getId();
-
+        forumService.purgeUser(id);
         refreshTokenRepository.deleteByUserId(id);
         verificationRepository.deleteByUserId(id);
         conversationRepository.deleteByUserId(id);
