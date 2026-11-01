@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch, ApiError, saveTokens } from "@/lib/api";
 import { LoginPayload, TokenPairResponse } from "@/types/auth";
-
+import Link from "next/link"
 export default function LoginPage() {
   const router = useRouter();
   const [form, setForm] = useState<LoginPayload>({ email: "", password: "" });
@@ -58,6 +58,34 @@ export default function LoginPage() {
         >
           {loading ? "Đang xử lý..." : "Đăng nhập"}
         </button>
+          <p className="text-sm text-center">
+          <Link href="/forgot-password" className="link-brand">
+            Quên mật khẩu?
+          </Link>
+        </p>
+        
+<div className="space-y-3 pt-2">
+  <p className="text-sm text-ink-muted text-center">
+    Chưa có tài khoản?
+  </p>
+
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <Link
+      href="/register"
+      className="flex items-center justify-center rounded-lg border border-brand px-4 py-2.5 text-sm font-medium text-brand transition hover:bg-brand hover:text-white"
+    >
+      Đăng ký
+    </Link>
+
+    <Link
+      href="/register/alumni"
+      className="flex items-center justify-center rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-brand hover:text-brand"
+    >
+      Đăng ký cựu sinh viên
+    </Link>
+  </div>
+</div>
+
       </form>
     </main>
   );

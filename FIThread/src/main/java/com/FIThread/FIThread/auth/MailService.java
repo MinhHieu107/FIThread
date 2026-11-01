@@ -41,4 +41,13 @@ public class MailService {
             org.slf4j.LoggerFactory.getLogger(MailService.class).warn("Gui email that bai: {}", e.getMessage());
         }
     }
+
+    @Async
+    public void sendResetEmail(String toEmail, String fullName, String otpCode, int validMinutes) {
+        sendPlain(toEmail, "FIThread - Mã đặt lại mật khẩu",
+                "Chào " + fullName + ",\n\nMã đặt lại mật khẩu FIThread của bạn là: " + otpCode
+                        + "\n\nMã có hiệu lực trong " + validMinutes + " phút. Nếu bạn không yêu cầu đặt lại mật khẩu, "
+                        + "hãy bỏ qua email này, mật khẩu của bạn vẫn an toàn.\n\n"
+                        + "FIThread - Khoa CNTT, Đại học Hà Nội");
+    }
 }
