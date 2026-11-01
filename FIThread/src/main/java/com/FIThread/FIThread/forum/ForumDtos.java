@@ -20,7 +20,10 @@ public final class ForumDtos {
     public record PostPage(List<PostView> content, int page, int totalPages, long totalElements) {}
 
     public record ThreadView(PostView root, List<PostView> replies) {}
-
+    public record FeaturedThread(
+            PostView root,
+            PostView featuredComment
+    ) {}
     public record LikeResult(boolean liked, long likeCount) {}
 
     public record TagCount(String tag, long count) {}
