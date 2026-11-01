@@ -50,3 +50,7 @@ export interface ForumModerationRow {
   reasons: string[];
   history: { action: string; reason: string | null; adminName: string; createdAt: string }[];
 }
+export interface FeaturedThread {
+  root: PostView;
+  featuredComment: PostView;
+}

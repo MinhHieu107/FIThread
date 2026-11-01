@@ -25,7 +25,13 @@ public class ForumController {
                          Authentication auth) {
         return forumService.feed(auth.getName(), tag, q, mine, page, size);
     }
-
+    @GetMapping("/posts/featured")
+    public List<FeaturedThread> featured(
+            @RequestParam(defaultValue = "5") int size,
+            Authentication auth
+    ) {
+        return forumService.featuredThreads(auth.getName(), size);
+    }
     @PostMapping("/posts")
     public PostView create(@Valid @RequestBody PostRequest request, Authentication auth) {
         return forumService.create(auth.getName(), request.getContent());

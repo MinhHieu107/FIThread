@@ -58,6 +58,80 @@ public class ForumService {
         return new PostPage(toViews(result.getContent(), viewer), result.getNumber(),
                 result.getTotalPages(), result.getTotalElements());
     }
+    @Transactional(readOnly = true)
+    public List<FeaturedThread> featuredThreads(String email, int size) {
+        User viewer = findUser(email);
+
+        int limit = Math.min(Math.max(size, 1), 10);
+
+        // Lấy nhiều ứng viên để có thể chọn các thread khác nhau.
+        List<Object[]> candidates = postRepository.findFeaturedComments(
+                ForumPostStatus.PUBLISHED,
+                ForumPostStatus.PUBLISHED,
+                PageRequest.of(0, Math.min(limit * 10, 100))
+        );
+
+        // Mỗi thread chỉ hiển thị một bình luận nổi bật.
+        Map<Long, ForumPost> roots = new LinkedHashMap<>();
+        Map<Long, ForumPost> comments = new LinkedHashMap<>();
+
+        for (Object[] row : candidates) {
+            ForumPost comment = (ForumPost) row[0];
+            Long rootId = comment.getRootId();
+
+            if (rootId == null || comments.containsKey(rootId)) {
+                continue;
+            }
+
+            ForumPost root = roots.get(rootId);
+
+            if (root == null) {
+                root = postRepository.findById(rootId).orElse(null);
+
+                if (root == null
+                        || root.getParentId() != null
+                        || root.getStatus() != ForumPostStatus.PUBLISHED) {
+                    continue;
+                }
+
+                roots.put(rootId, root);
+            }
+
+            comments.put(rootId, comment);
+
+            if (comments.size() >= limit) {
+                break;
+            }
+        }
+
+        // Chuyển thành PostView theo cùng logic của feed hiện tại.
+        List<ForumPost> posts = new ArrayList<>();
+
+        for (Long rootId : comments.keySet()) {
+            posts.add(roots.get(rootId));
+            posts.add(comments.get(rootId));
+        }
+
+        List<PostView> views = toViews(posts, viewer);
+        Map<Long, PostView> viewsById = new HashMap<>();
+
+        for (PostView view : views) {
+            viewsById.put(view.id(), view);
+        }
+
+        List<FeaturedThread> result = new ArrayList<>();
+
+        for (Long rootId : comments.keySet()) {
+            PostView rootView = viewsById.get(rootId);
+            PostView commentView = viewsById.get(comments.get(rootId).getId());
+
+            if (rootView != null && commentView != null) {
+                result.add(new FeaturedThread(rootView, commentView));
+            }
+        }
+
+        return result;
+    }
 
     /** Mo mot cuoc thao luan (neu id la mot tra loi thi mo cuoc thao luan chua no). */
     @Transactional(readOnly = true)

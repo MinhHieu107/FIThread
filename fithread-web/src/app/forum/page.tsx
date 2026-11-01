@@ -7,7 +7,7 @@ import Composer from "@/components/forum/Composer";
 import PostCard from "@/components/forum/PostCard";
 import { apiFetch, ApiError } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
-import { PostPage, TagCount } from "@/types/forum";
+import { PostPage, TagCount, FeaturedThread } from "@/types/forum";
 
 function Feed() {
   const router = useRouter();
@@ -22,10 +22,9 @@ function Feed() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [error, setError] = useState("");
-
+  const [featuredThreads, setFeaturedThreads] = useState<FeaturedThread[]>([]);
   const filterKey = `${tag}|${q}|${mine}`;
   const page = pageState.key === filterKey ? pageState.page : 0;
-
   useEffect(() => {
     getCurrentUser().then((u) => setIsAdmin(u?.role === "ADMIN"));
   }, []);
@@ -60,7 +59,16 @@ function Feed() {
       cancelled = true;
     };
   }, [tag, q, mine, page, reloadKey]);
+  useEffect(() => {
+  if (mine || tag || q) {
+    setFeaturedThreads([]);
+    return;
+  }
 
+  apiFetch<FeaturedThread[]>("/forum/posts/featured?size=5")
+    .then(setFeaturedThreads)
+    .catch(() => setFeaturedThreads([]));
+}, [mine, tag, q, reloadKey]);
   async function createPost(content: string) {
     await apiFetch("/forum/posts", { method: "POST", body: JSON.stringify({ content }) });
     setReloadKey((k) => k + 1);
@@ -130,7 +138,6 @@ function Feed() {
           </span>
         )}
       </div>
-
       {error && <p className="text-red-600 text-sm">{error}</p>}
       {!data && !error && <p className="text-ink-muted text-sm">Đang tải...</p>}
       {data && data.content.length === 0 && (
@@ -138,7 +145,68 @@ function Feed() {
           {mine ? "Bạn chưa có bài viết nào." : filtered ? "Không có bài viết nào phù hợp." : "Chưa có bài viết nào, hãy là người đầu tiên!"}
         </p>
       )}
+        {!mine && !filtered && featuredThreads.length > 0 && (
+  <section className="space-y-3">
+    <div>
+      <h2 className="text-lg font-bold text-brand-darker">
+        Thảo luận nổi bật
+      </h2>
+      <p className="text-sm text-ink-muted">
+        Những bình luận đang nhận được nhiều lượt thích.
+      </p>
+    </div>
 
+    {featuredThreads.map(({ root, featuredComment }) => (
+      <article
+        key={root.id}
+        className="overflow-hidden rounded-xl border border-brand-light bg-white"
+      >
+        <div className="p-4">
+          <div className="mb-2 flex items-center gap-2 text-xs text-ink-muted">
+            <span>Bài viết gốc</span>
+            <span>·</span>
+            <span>{root.authorName}</span>
+          </div>
+
+          <Link
+            href={`/forum/thread?id=${root.id}`}
+            className="block font-semibold text-brand-darker hover:underline"
+          >
+            {root.content}
+          </Link>
+
+          <div className="mt-4 rounded-lg bg-gray-50 p-3">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-ink-muted">
+                Bình luận nổi bật · {featuredComment.authorName}
+              </span>
+
+              <span className="text-xs font-semibold text-red-600">
+                ♥ {featuredComment.likeCount}
+              </span>
+            </div>
+
+            <Link
+              href={`/forum/thread?id=${root.id}`}
+              className="block whitespace-pre-wrap text-sm leading-6 text-ink hover:text-brand-darker"
+            >
+              {featuredComment.content}
+            </Link>
+
+            <div className="mt-3">
+              <Link
+                href={`/forum/thread?id=${root.id}`}
+                className="text-xs font-medium text-brand-darker hover:underline"
+              >
+                Xem cuộc thảo luận →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </article>
+    ))}
+  </section>
+)}
       <div className="space-y-3">
         {data?.content.map((p) => (
           <PostCard key={p.id} post={p} mode="feed" isAdmin={isAdmin} onChanged={() => setReloadKey((k) => k + 1)} />
