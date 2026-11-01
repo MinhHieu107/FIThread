@@ -14,7 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashSet;
 import java.util.List;
-
+import com.FIThread.FIThread.timeline.TimelineDtos.TimelineResponse;
+import com.FIThread.FIThread.timeline.TimelineService;
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -28,7 +29,18 @@ public class ChatService {
     private final AiClient aiClient;
     private final ChatRateLimiter rateLimiter;
     private final AppProperties appProperties;
-
+    private static final int TIMELINE_MAX_CHARS = 8000;
+    private final TimelineService timelineService;
+    private String buildTimelineText() {
+        StringBuilder sb = new StringBuilder();
+        for (TimelineResponse e : timelineService.list()) {
+            String line = "- " + e.year() + ": " + e.title()
+                    + (e.description() == null || e.description().isBlank() ? "" : " — " + e.description()) + "\n";
+            if (sb.length() + line.length() > TIMELINE_MAX_CHARS) break;
+            sb.append(line);
+        }
+        return sb.toString();
+    }
     public ChatReply ask(String email, Long conversationId, String rawMessage) {
         AppProperties.Ai ai = appProperties.getAi();
         if (!ai.isEnabled() || ai.getApiKey() == null || ai.getApiKey().isBlank()) {
@@ -83,7 +95,10 @@ public class ChatService {
         String catalog = buildCatalogText();
         sb.append("DỮ LIỆU MÔN HỌC (từ hệ thống FIThread):\n")
                 .append(catalog.isBlank() ? "(chưa có)\n" : catalog);
-
+        String timeline = buildTimelineText();
+        if (!timeline.isBlank()) {
+            sb.append("\nDÒNG THỜI GIAN CỦA KHOA (từ hệ thống FIThread):\n").append(timeline);
+        }
         sb.append("\nCÂU HỎI CỦA NGƯỜI DÙNG:\n<cau_hoi>\n")
                 .append(question.replace("<", "‹").replace(">", "›"))
                 .append("\n</cau_hoi>");

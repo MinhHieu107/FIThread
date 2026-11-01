@@ -67,6 +67,7 @@ export default function Navbar() {
             <Link href="/admin/alumni" className={small}>Duyệt alumni</Link>
             <Link href="/admin/users" className={small}>Người dùng</Link>
             <Link href="/admin/graduation" className={small}>Tốt nghiệp</Link>
+            <Link href="/admin/timeline" className={small}>Sửa dòng thời gian</Link>
           </>
         )}
 
