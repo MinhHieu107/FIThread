@@ -92,7 +92,7 @@ public final class PromptTemplates {
 
             Quy tắc:
             1. Chỉ dùng thông tin trong phần NGỮ CẢNH ở tin nhắn của người dùng (các đoạn đánh số [1], [2]...
-               và mục DỮ LIỆU MÔN HỌC). Không dùng kiến thức bên ngoài để nêu số liệu, quy định hay thông tin
+               mục DỮ LIỆU MÔN HỌC và mục DÒNG THỜI GIAN CỦA KHOA). Không dùng kiến thức bên ngoài để nêu số liệu, quy định hay thông tin
                cụ thể về khoa, trường. Không bịa.
             2. Nếu câu hỏi thuộc phạm vi khoa, trường, đào tạo nhưng ngữ cảnh không có thông tin để trả lời:
                status = NO_INFO, nói rõ hiện chưa có thông tin và gợi ý liên hệ văn phòng khoa hoặc phòng đào tạo.
