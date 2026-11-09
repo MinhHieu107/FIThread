@@ -15,6 +15,7 @@ export interface PostView {
   replyCount: number;
   mine: boolean;
   status: string;
+    imageIds: number[];
 }
 
 export interface PostPage {
@@ -49,6 +50,7 @@ export interface ForumModerationRow {
   reportCount: number;
   reasons: string[];
   history: { action: string; reason: string | null; adminName: string; createdAt: string }[];
+    imageIds: number[];
 }
 export interface FeaturedThread {
   root: PostView;

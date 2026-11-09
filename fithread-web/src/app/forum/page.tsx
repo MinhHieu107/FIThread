@@ -8,7 +8,7 @@ import PostCard from "@/components/forum/PostCard";
 import { apiFetch, ApiError } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import { PostPage, TagCount, FeaturedThread } from "@/types/forum";
-
+import { submitForumPost } from "@/lib/forum"
 function Feed() {
   const router = useRouter();
   const params = useSearchParams();
@@ -69,8 +69,8 @@ function Feed() {
     .then(setFeaturedThreads)
     .catch(() => setFeaturedThreads([]));
 }, [mine, tag, q, reloadKey]);
-  async function createPost(content: string) {
-    await apiFetch("/forum/posts", { method: "POST", body: JSON.stringify({ content }) });
+    async function createPost(content: string, images: File[]) {
+    await submitForumPost("/forum/posts", content, images);
     setReloadKey((k) => k + 1);
   }
 
@@ -89,6 +89,7 @@ function Feed() {
           submitLabel="Đăng"
           tagHint
           onSubmit={createPost}
+          allowImages
         />
       </section>
 

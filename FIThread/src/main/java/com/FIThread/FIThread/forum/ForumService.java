@@ -9,12 +9,17 @@ import com.FIThread.FIThread.user.Role;
 import com.FIThread.FIThread.user.User;
 import com.FIThread.FIThread.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.text.Normalizer;
 import java.time.Instant;
@@ -28,6 +33,7 @@ public class ForumService {
 
     private static final int MAX_LENGTH = 500;
     private static final int MAX_TAGS = 5;
+    private static final int MAX_IMAGES = 4;
     private static final int MAX_THREAD_NODES = 500;
     private static final Pattern TAG = Pattern.compile("(?<![\\p{L}\\p{N}_])#([\\p{L}\\p{N}_]{1,50})");
 
@@ -35,10 +41,14 @@ public class ForumService {
     private final ForumLikeRepository likeRepository;
     private final ForumReportRepository reportRepository;
     private final ForumModerationLogRepository logRepository;
+    private final ForumImageRepository imageRepository;
+    private final ForumImageStorage imageStorage;
     private final UserRepository userRepository;
     private final ModerationService moderationService;
     private final ForumRateLimiter rateLimiter;
     private final AppProperties appProperties;
+
+    public record ImageFile(Resource resource, MediaType mediaType) {}
 
     // ---------- doc ----------
 
@@ -57,80 +67,6 @@ public class ForumService {
         }
         return new PostPage(toViews(result.getContent(), viewer), result.getNumber(),
                 result.getTotalPages(), result.getTotalElements());
-    }
-    @Transactional(readOnly = true)
-    public List<FeaturedThread> featuredThreads(String email, int size) {
-        User viewer = findUser(email);
-
-        int limit = Math.min(Math.max(size, 1), 10);
-
-        // Lấy nhiều ứng viên để có thể chọn các thread khác nhau.
-        List<Object[]> candidates = postRepository.findFeaturedComments(
-                ForumPostStatus.PUBLISHED,
-                ForumPostStatus.PUBLISHED,
-                PageRequest.of(0, Math.min(limit * 10, 100))
-        );
-
-        // Mỗi thread chỉ hiển thị một bình luận nổi bật.
-        Map<Long, ForumPost> roots = new LinkedHashMap<>();
-        Map<Long, ForumPost> comments = new LinkedHashMap<>();
-
-        for (Object[] row : candidates) {
-            ForumPost comment = (ForumPost) row[0];
-            Long rootId = comment.getRootId();
-
-            if (rootId == null || comments.containsKey(rootId)) {
-                continue;
-            }
-
-            ForumPost root = roots.get(rootId);
-
-            if (root == null) {
-                root = postRepository.findById(rootId).orElse(null);
-
-                if (root == null
-                        || root.getParentId() != null
-                        || root.getStatus() != ForumPostStatus.PUBLISHED) {
-                    continue;
-                }
-
-                roots.put(rootId, root);
-            }
-
-            comments.put(rootId, comment);
-
-            if (comments.size() >= limit) {
-                break;
-            }
-        }
-
-        // Chuyển thành PostView theo cùng logic của feed hiện tại.
-        List<ForumPost> posts = new ArrayList<>();
-
-        for (Long rootId : comments.keySet()) {
-            posts.add(roots.get(rootId));
-            posts.add(comments.get(rootId));
-        }
-
-        List<PostView> views = toViews(posts, viewer);
-        Map<Long, PostView> viewsById = new HashMap<>();
-
-        for (PostView view : views) {
-            viewsById.put(view.id(), view);
-        }
-
-        List<FeaturedThread> result = new ArrayList<>();
-
-        for (Long rootId : comments.keySet()) {
-            PostView rootView = viewsById.get(rootId);
-            PostView commentView = viewsById.get(comments.get(rootId).getId());
-
-            if (rootView != null && commentView != null) {
-                result.add(new FeaturedThread(rootView, commentView));
-            }
-        }
-
-        return result;
     }
 
     /** Mo mot cuoc thao luan (neu id la mot tra loi thi mo cuoc thao luan chua no). */
@@ -170,12 +106,30 @@ public class ForumService {
                 .toList();
     }
 
+    /** Doc anh: chi nguoi dang nhap xem duoc; bai bi an chi tac gia va admin xem duoc. */
+    @Transactional(readOnly = true)
+    public ImageFile loadImage(String email, Long imageId) {
+        User viewer = findUser(email);
+        ForumImage image = imageRepository.findById(imageId)
+                .orElseThrow(() -> new BusinessException("Khong tim thay anh", HttpStatus.NOT_FOUND));
+        ForumPost post = find(image.getPostId());
+
+        boolean allowed = post.getStatus() == ForumPostStatus.PUBLISHED
+                || post.getAuthor().getId().equals(viewer.getId())
+                || viewer.getRole() == Role.ADMIN;
+        if (!allowed) {
+            throw new BusinessException("Khong tim thay anh", HttpStatus.NOT_FOUND);
+        }
+        return new ImageFile(imageStorage.load(image.getFilename()), imageStorage.mediaType(image.getFilename()));
+    }
+
     // ---------- ghi ----------
 
     @Transactional
-    public PostView create(String email, String rawContent) {
+    public PostView create(String email, String rawContent, List<MultipartFile> images) {
         User user = findUser(email);
-        String content = validateContent(rawContent);
+        List<MultipartFile> files = cleanFiles(images);
+        String content = validateContent(rawContent, !files.isEmpty());
         rateLimiter.check(email);
 
         ForumPost post = new ForumPost();
@@ -183,17 +137,19 @@ public class ForumService {
         post.setContent(content);
         post.getTags().addAll(extractTags(content));
         postRepository.save(post);
+        attachImages(post, files);
         return toViews(List.of(post), user).get(0);
     }
 
     @Transactional
-    public PostView reply(String email, Long parentId, String rawContent) {
+    public PostView reply(String email, Long parentId, String rawContent, List<MultipartFile> images) {
         User user = findUser(email);
         ForumPost parent = find(parentId);
         if (parent.getStatus() != ForumPostStatus.PUBLISHED) {
             throw new BusinessException("Khong the tra loi bai viet nay", HttpStatus.CONFLICT);
         }
-        String content = validateContent(rawContent);
+        List<MultipartFile> files = cleanFiles(images);
+        String content = validateContent(rawContent, !files.isEmpty());
         rateLimiter.check(email);
 
         ForumPost reply = new ForumPost();
@@ -202,6 +158,7 @@ public class ForumService {
         reply.setRootId(parent.getRootId() != null ? parent.getRootId() : parent.getId());
         reply.setContent(content);
         postRepository.save(reply);
+        attachImages(reply, files);
         return toViews(List.of(reply), user).get(0);
     }
 
@@ -209,7 +166,7 @@ public class ForumService {
     public PostView update(String email, Long id, String rawContent) {
         User user = findUser(email);
         ForumPost post = findOwned(user, id);
-        String content = validateContent(rawContent);
+        String content = validateContent(rawContent, imageRepository.existsByPostId(id));
 
         post.setContent(content);
         post.setEditedAt(Instant.now());
@@ -336,7 +293,55 @@ public class ForumService {
 
     // ---------- noi bo ----------
 
+    private List<MultipartFile> cleanFiles(List<MultipartFile> images) {
+        if (images == null) return List.of();
+        List<MultipartFile> files = images.stream().filter(f -> f != null && !f.isEmpty()).toList();
+        if (files.size() > MAX_IMAGES) {
+            throw new BusinessException("Toi da " + MAX_IMAGES + " anh moi bai");
+        }
+        return files;
+    }
+
+    /** Luu tung anh; neu mot anh loi thi xoa cac tep da luu va huy ca bai. */
+    private void attachImages(ForumPost post, List<MultipartFile> files) {
+        List<String> stored = new ArrayList<>();
+        try {
+            int order = 0;
+            for (MultipartFile file : files) {
+                ForumImageStorage.Stored saved = imageStorage.store(file);
+                stored.add(saved.filename());
+
+                ForumImage image = new ForumImage();
+                image.setPostId(post.getId());
+                image.setFilename(saved.filename());
+                image.setContentType(saved.contentType());
+                image.setSizeBytes(file.getSize());
+                image.setSortOrder(order++);
+                imageRepository.save(image);
+            }
+        } catch (RuntimeException e) {
+            stored.forEach(imageStorage::delete);
+            throw e;
+        }
+    }
+
+    private void deleteImagesOf(Long postId) {
+        List<ForumImage> images = imageRepository.findByPostId(postId);
+        if (images.isEmpty()) return;
+
+        List<String> files = images.stream().map(ForumImage::getFilename).toList();
+        imageRepository.deleteAll(images);
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                files.forEach(imageStorage::delete);
+            }
+        });
+    }
+
     private void removeOrTombstone(ForumPost post) {
+        deleteImagesOf(post.getId());
+
         if (postRepository.existsByParentId(post.getId())) {
             likeRepository.deleteByPostId(post.getId());
             reportRepository.deleteByPostId(post.getId());
@@ -349,10 +354,15 @@ public class ForumService {
         }
     }
 
-    private String validateContent(String raw) {
+    private String validateContent(String raw, boolean hasImages) {
         String content = raw == null ? "" : raw.trim();
-        if (content.isEmpty()) throw new BusinessException("Noi dung khong duoc de trong");
-        if (content.length() > MAX_LENGTH) throw new BusinessException("Noi dung toi da " + MAX_LENGTH + " ky tu");
+        if (content.isEmpty()) {
+            if (!hasImages) throw new BusinessException("Noi dung khong duoc de trong");
+            return content;
+        }
+        if (content.length() > MAX_LENGTH) {
+            throw new BusinessException("Noi dung toi da " + MAX_LENGTH + " ky tu");
+        }
         moderationService.assertClean(content, "Noi dung");
         return content;
     }
@@ -394,11 +404,16 @@ public class ForumService {
         Map<Long, Long> replies = rootIds.isEmpty()
                 ? Map.of() : toMap(postRepository.countRepliesByRoot(rootIds, ForumPostStatus.PUBLISHED));
 
-        return posts.stream().map(p -> toView(p, viewer, likes, liked, replies)).toList();
+        Map<Long, List<Long>> images = new HashMap<>();
+        for (ForumImage image : imageRepository.findByPostIdInOrderBySortOrderAscIdAsc(ids)) {
+            images.computeIfAbsent(image.getPostId(), k -> new ArrayList<>()).add(image.getId());
+        }
+
+        return posts.stream().map(p -> toView(p, viewer, likes, liked, replies, images)).toList();
     }
 
     private PostView toView(ForumPost p, User viewer, Map<Long, Long> likes, Set<Long> liked,
-                            Map<Long, Long> replies) {
+                            Map<Long, Long> replies, Map<Long, List<Long>> images) {
         boolean deleted = p.getStatus() == ForumPostStatus.DELETED;
         boolean root = p.getParentId() == null;
         User author = p.getAuthor();
@@ -415,7 +430,8 @@ public class ForumService {
                 likes.getOrDefault(p.getId(), 0L).intValue(), liked.contains(p.getId()),
                 replies.getOrDefault(p.getId(), 0L).intValue(),
                 author.getId().equals(viewer.getId()),
-                p.getStatus().name());
+                p.getStatus().name(),
+                deleted ? List.of() : images.getOrDefault(p.getId(), List.of()));
     }
 
     private ModerationRow toModerationRow(ForumPost p) {
@@ -432,9 +448,11 @@ public class ForumService {
                         l.getCreatedAt()))
                 .toList();
 
+        List<Long> imageIds = imageRepository.findByPostId(p.getId()).stream().map(ForumImage::getId).toList();
+
         return new ModerationRow(p.getId(), p.getRootId() != null ? p.getRootId() : p.getId(),
                 p.getAuthor().getFullName(), p.getContent(), p.getStatus().name(), p.getCreatedAt(),
-                reports.size(), reasons, history);
+                reports.size(), reasons, history, imageIds);
     }
 
     private void log(Long postId, User admin, ModerationAction action, String reason) {
