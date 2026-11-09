@@ -5,7 +5,7 @@ import Link from "next/link";
 import AdminGuard from "@/components/AdminGuard";
 import { apiFetch, ApiError } from "@/lib/api";
 import { ForumModerationRow } from "@/types/forum";
-
+import ImageGrid from "@/components/forum/ImageGrid"
 const TABS = [
   { key: "PENDING_MODERATION", label: "Chờ duyệt" },
   { key: "REPORTED", label: "Bị báo cáo" },
@@ -85,7 +85,7 @@ function ForumModeration() {
             </div>
 
             <p className="whitespace-pre-wrap text-sm">{p.content}</p>
-
+            <ImageGrid ids={p.imageIds} />
             {p.reasons.length > 0 && (
               <div className="rounded-md bg-brand-lighter px-3 py-2 text-sm">
                 <p className="font-medium mb-1">Lý do báo cáo:</p>

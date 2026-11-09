@@ -3,8 +3,12 @@ package com.FIThread.FIThread.forum;
 import com.FIThread.FIThread.forum.ForumDtos.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -25,16 +29,17 @@ public class ForumController {
                          Authentication auth) {
         return forumService.feed(auth.getName(), tag, q, mine, page, size);
     }
-    @GetMapping("/posts/featured")
-    public List<FeaturedThread> featured(
-            @RequestParam(defaultValue = "5") int size,
-            Authentication auth
-    ) {
-        return forumService.featuredThreads(auth.getName(), size);
-    }
-    @PostMapping("/posts")
+
+    @PostMapping(value = "/posts", consumes = MediaType.APPLICATION_JSON_VALUE)
     public PostView create(@Valid @RequestBody PostRequest request, Authentication auth) {
-        return forumService.create(auth.getName(), request.getContent());
+        return forumService.create(auth.getName(), request.getContent(), List.of());
+    }
+
+    @PostMapping(value = "/posts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public PostView createWithImages(@RequestParam(required = false) String content,
+                                     @RequestParam(value = "images", required = false) List<MultipartFile> images,
+                                     Authentication auth) {
+        return forumService.create(auth.getName(), content, images);
     }
 
     @GetMapping("/posts/{id}")
@@ -42,9 +47,17 @@ public class ForumController {
         return forumService.thread(auth.getName(), id);
     }
 
-    @PostMapping("/posts/{id}/replies")
+    @PostMapping(value = "/posts/{id}/replies", consumes = MediaType.APPLICATION_JSON_VALUE)
     public PostView reply(@PathVariable Long id, @Valid @RequestBody PostRequest request, Authentication auth) {
-        return forumService.reply(auth.getName(), id, request.getContent());
+        return forumService.reply(auth.getName(), id, request.getContent(), List.of());
+    }
+
+    @PostMapping(value = "/posts/{id}/replies", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public PostView replyWithImages(@PathVariable Long id,
+                                    @RequestParam(required = false) String content,
+                                    @RequestParam(value = "images", required = false) List<MultipartFile> images,
+                                    Authentication auth) {
+        return forumService.reply(auth.getName(), id, content, images);
     }
 
     @PutMapping("/posts/{id}")
@@ -73,5 +86,14 @@ public class ForumController {
     @GetMapping("/tags/trending")
     public List<TagCount> trending() {
         return forumService.trendingTags();
+    }
+
+    @GetMapping("/images/{id}")
+    public ResponseEntity<Resource> image(@PathVariable Long id, Authentication auth) {
+        ForumService.ImageFile file = forumService.loadImage(auth.getName(), id);
+        return ResponseEntity.ok()
+                .contentType(file.mediaType())
+                .header("Cache-Control", "private, max-age=86400")
+                .body(file.resource());
     }
 }

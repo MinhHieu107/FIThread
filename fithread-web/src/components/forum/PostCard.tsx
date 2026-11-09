@@ -6,7 +6,8 @@ import { apiFetch, ApiError } from "@/lib/api";
 import { LikeResult, PostView } from "@/types/forum";
 import Composer from "./Composer";
 import RichText from "./RichText";
-
+import ImageGrid from "./ImageGrid";
+import { submitForumPost } from "@/lib/forum";
 const ROLE_LABELS: Record<string, string> = {
   STUDENT: "Sinh viên",
   ALUMNI: "Cựu sinh viên",
@@ -53,8 +54,8 @@ export default function PostCard({ post, mode, isAdmin, onChanged }: Props) {
     }
   }
 
-  async function submitReply(content: string) {
-    await apiFetch(`/forum/posts/${post.id}/replies`, { method: "POST", body: JSON.stringify({ content }) });
+    async function submitReply(content: string, images: File[]) {
+    await submitForumPost(`/forum/posts/${post.id}/replies`, content, images);
     setReplying(false);
     onChanged();
   }
@@ -146,7 +147,7 @@ export default function PostCard({ post, mode, isAdmin, onChanged }: Props) {
       ) : (
         <RichText text={post.content} linkTags={isRoot} />
       )}
-
+      {!editing && <ImageGrid ids={post.imageIds} />}
       {!editing && (
         <div className="flex flex-wrap items-center gap-4 text-xs text-ink-muted">
           {published && (
@@ -226,6 +227,7 @@ export default function PostCard({ post, mode, isAdmin, onChanged }: Props) {
             submitLabel="Gửi trả lời"
             onSubmit={submitReply}
             onCancel={() => setReplying(false)}
+            allowImages
           />
         </div>
       )}

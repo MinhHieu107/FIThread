@@ -127,3 +127,49 @@ export function isLoggedIn() {
 export function getAccessTokenForUpload() {
   return getAccessToken();
 }
+/** Gui form co tep (multipart). Khong dat Content-Type de trinh duyet tu them ranh gioi. */
+export async function apiUpload<T>(path: string, formData: FormData, _isRetry = false): Promise<T> {
+  const token = getAccessToken();
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  if (res.status === 401 && !_isRetry) {
+    const newAccessToken = await refreshAccessToken();
+    if (newAccessToken) return apiUpload<T>(path, formData, true);
+
+    if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+      window.location.href = "/login";
+    }
+    throw new ApiError("Phien dang nhap da het han", 401);
+  }
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ message: "Co loi xay ra" }));
+    throw new ApiError(body.message || "Co loi xay ra", res.status);
+  }
+  return res.json();
+}
+
+/** Tai tep (anh) can xac thuc ve dang Blob. */
+export async function apiFetchBlob(path: string, _isRetry = false): Promise<Blob> {
+  const token = getAccessToken();
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  if (res.status === 401 && !_isRetry) {
+    const newAccessToken = await refreshAccessToken();
+    if (newAccessToken) return apiFetchBlob(path, true);
+
+    if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+      window.location.href = "/login";
+    }
+    throw new ApiError("Phien dang nhap da het han", 401);
+  }
+
+  if (!res.ok) throw new ApiError("Khong tai duoc anh", res.status);
+  return res.blob();
+}

@@ -3,8 +3,8 @@ import Link from "next/link";
 const TAG = /(?<![\p{L}\p{N}_])#([\p{L}\p{N}_]{1,50})/gu;
 
 export default function RichText({ text, linkTags }: { text: string; linkTags: boolean }) {
+    if (!text) return null;
   if (!linkTags) return <p className="whitespace-pre-wrap text-sm">{text}</p>;
-
   const parts: React.ReactNode[] = [];
   const re = new RegExp(TAG.source, "gu");
   let last = 0;

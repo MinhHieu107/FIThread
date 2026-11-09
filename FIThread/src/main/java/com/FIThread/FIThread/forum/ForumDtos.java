@@ -12,11 +12,6 @@ public final class ForumDtos {
 
     private ForumDtos() {}
 
-    public record PostView(Long id, Long parentId, Long rootId, Long authorId, String authorName,
-                           String authorRole, String authorCohort, String content, List<String> tags,
-                           Instant createdAt, boolean edited, int likeCount, boolean likedByMe,
-                           int replyCount, boolean mine, String status) {}
-
     public record PostPage(List<PostView> content, int page, int totalPages, long totalElements) {}
 
     public record ThreadView(PostView root, List<PostView> replies) {}
@@ -28,9 +23,13 @@ public final class ForumDtos {
 
     public record TagCount(String tag, long count) {}
 
+    public record PostView(Long id, Long parentId, Long rootId, Long authorId, String authorName,
+                           String authorRole, String authorCohort, String content, List<String> tags,
+                           Instant createdAt, boolean edited, int likeCount, boolean likedByMe,
+                           int replyCount, boolean mine, String status, List<Long> imageIds) {}
     public record ModerationRow(Long id, Long rootId, String authorName, String content, String status,
                                 Instant createdAt, int reportCount, List<String> reasons,
-                                List<HistoryEntry> history) {
+                                List<HistoryEntry> history, List<Long> imageIds) {
         public record HistoryEntry(String action, String reason, String adminName, Instant createdAt) {}
     }
 
